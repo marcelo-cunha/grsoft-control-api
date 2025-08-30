@@ -39,6 +39,31 @@ type AnotaAiResponse struct {
 	Message string `json:"message"`
 }
 
+// AnotaAiListPagesResponse representa a resposta da API de listagem de páginas
+type AnotaAiListPagesResponse struct {
+	Success bool `json:"success"`
+	Info    struct {
+		Docs  []AnotaAiPage `json:"docs"`
+		Limit int           `json:"limit"`
+		Page  int           `json:"page"`
+	} `json:"info"`
+}
+
+// AnotaAiPage representa uma página/loja na resposta da API
+type AnotaAiPage struct {
+	ID       string `json:"_id"`
+	PageID   string `json:"page_id"`
+	PageName string `json:"page_name"`
+	Active   bool   `json:"active"`
+	Page     struct {
+		Establishment struct {
+			Sign struct {
+				Active bool `json:"active"`
+			} `json:"sign"`
+		} `json:"establishment"`
+	} `json:"page"`
+}
+
 // NewAnotaAiService cria um novo serviço AnotaAI
 func NewAnotaAiService(cfg *config.Config) *AnotaAiService {
 	service := &AnotaAiService{
@@ -54,7 +79,7 @@ func NewAnotaAiService(cfg *config.Config) *AnotaAiService {
 	return service
 }
 
-// startTokenRenewal inicia a rotina que renova o token a cada 6 horas
+// startTokenRenewal inicia a rotina que renova o token a cada 3 horas
 func (s *AnotaAiService) startTokenRenewal() {
 	log.Printf("[AnotaAI] Iniciando serviço de renovação de token...")
 	log.Printf("[AnotaAI] URL configurada: %s", s.config.Platforms.AnotaAiURL)
@@ -67,8 +92,8 @@ func (s *AnotaAiService) startTokenRenewal() {
 		log.Printf("[AnotaAI] Login inicial realizado com sucesso!")
 	}
 
-	// Configura renovação a cada 6 horas
-	ticker := time.NewTicker(6 * time.Hour)
+	// Configura renovação a cada 3 horas
+	ticker := time.NewTicker(3 * time.Hour)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -229,4 +254,60 @@ func (s *AnotaAiService) DeactivateStore(idLoja string) error {
 	}
 
 	return nil
+}
+
+// GetMultipleStoreStatus obtém o status de múltiplas lojas no AnotaAI
+func (s *AnotaAiService) GetMultipleStoreStatus(idsLojas []string) (map[string]bool, error) {
+	token := s.getAccessToken()
+	if token == "" {
+		return nil, fmt.Errorf("token de acesso não disponível")
+	}
+
+	url := fmt.Sprintf("%s/partnerauth/partner/listpages/v2?limit=2000&page=1", s.config.Platforms.AnotaAiURL)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao criar requisição de status: %w", err)
+	}
+
+	req.Header.Set("authorization", token)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("erro na requisição de status: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("erro na consulta de status - status: %d", resp.StatusCode)
+	}
+
+	var listResp AnotaAiListPagesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
+		return nil, fmt.Errorf("erro ao decodificar resposta de status: %w", err)
+	}
+
+	if !listResp.Success {
+		return nil, fmt.Errorf("consulta de status falhou - success: false")
+	}
+
+	// Mapa para armazenar o status de cada loja solicitada
+	statusMap := make(map[string]bool)
+
+	// Inicializa todas as lojas como inativas (caso não sejam encontradas)
+	for _, idLoja := range idsLojas {
+		statusMap[idLoja] = false
+	}
+
+	// Procura cada loja solicitada na resposta da API
+	for _, idLoja := range idsLojas {
+		for _, page := range listResp.Info.Docs {
+			if page.PageID == idLoja {
+				// Verifica se a loja está ativa através do campo correto
+				statusMap[idLoja] = page.Page.Establishment.Sign.Active
+				break
+			}
+		}
+	}
+
+	return statusMap, nil
 }

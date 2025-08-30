@@ -61,7 +61,7 @@ components:
         - status
         - message
 
-    RespostaStatusLoja:
+    RespostaStatusMultiplasLojas:
       type: object
       properties:
         plataforma:
@@ -69,6 +69,18 @@ components:
           enum: [anotaai, deliveryvip]
           description: Identificador da plataforma
           example: anotaai
+        lojas:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusLojaDetalhes'
+          description: Lista com o status de cada loja consultada
+      required:
+        - plataforma
+        - lojas
+
+    StatusLojaDetalhes:
+      type: object
+      properties:
         id_loja:
           type: string
           description: Identificador da loja na plataforma
@@ -79,7 +91,6 @@ components:
           description: Status atual da loja
           example: ativo
       required:
-        - plataforma
         - id_loja
         - status
 
@@ -253,27 +264,46 @@ paths:
         '502':
           $ref: '#/components/responses/ErroBadGateway'
 
-  /plataformas/{plataforma}/lojas/{id_loja}/status:
+  /plataformas/{plataforma}/lojas/status:
     get:
-      summary: Consultar status da loja
-      description: Consulta o status atual da loja diretamente na plataforma
-      operationId: obterStatusLoja
+      summary: Consultar status de múltiplas lojas
+      description: |
+        Consulta o status de múltiplas lojas simultaneamente na plataforma.
+        
+        Os IDs das lojas devem ser fornecidos como parâmetro de query separados por vírgula.
+        
+        **Exemplo de uso:**
+        ```
+        GET /plataformas/anotaai/lojas/status?ids=12345,67890,abcdef
+        ```
+      operationId: obterStatusMultiplasLojas
       tags:
         - Lojas
       parameters:
         - $ref: '#/components/parameters/ParametroPlataforma'
-        - $ref: '#/components/parameters/ParametroIdLoja'
+        - name: ids
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Lista de IDs das lojas separados por vírgula
+          example: "12345,67890,abcdef"
       responses:
         '200':
-          description: Status da loja consultado com sucesso
+          description: Status das lojas consultado com sucesso
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespostaStatusLoja'
+                $ref: '#/components/schemas/RespostaStatusMultiplasLojas'
               example:
                 plataforma: anotaai
-                id_loja: "12345"
-                status: ativo
+                lojas:
+                  - id_loja: "12345"
+                    status: ativo
+                  - id_loja: "67890"
+                    status: inativo
+                  - id_loja: "abcdef"
+                    status: ativo
         '400':
           $ref: '#/components/responses/ErroRequisicaoInvalida'
         '401':

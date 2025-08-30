@@ -9,7 +9,9 @@ Configure as variáveis de ambiente no arquivo `.env`:
 ```env
 BEARER_TOKEN=meu-token-secreto-123
 PORT=8080
-ANOTAAI_API_URL=https://api.anotaai.com
+ANOTAAI_API_URL=https://integration-admin.api.anota.ai
+ANOTAAI_EMAIL=seu-email@exemplo.com.br
+ANOTAAI_PASSWORD=sua-senha
 DELIVERYVIP_API_URL=https://api.deliveryvip.com
 ```
 
@@ -21,7 +23,7 @@ DELIVERYVIP_API_URL=https://api.deliveryvip.com
 ### Operações de Loja (requer autenticação)
 - **POST** `/plataformas/{plataforma}/lojas/{id_loja}/ativar` - Ativar loja
 - **POST** `/plataformas/{plataforma}/lojas/{id_loja}/desativar` - Desativar loja  
-- **GET** `/plataformas/{plataforma}/lojas/{id_loja}/status` - Consultar status da loja
+- **GET** `/plataformas/{plataforma}/lojas/status?ids=id1,id2,id3` - Consultar status de múltiplas lojas
 
 ### Parâmetros
 - `plataforma`: `anotaai` ou `deliveryvip`

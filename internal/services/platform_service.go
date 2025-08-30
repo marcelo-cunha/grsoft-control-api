@@ -83,20 +83,56 @@ func (ps *PlatformService) DeactivateStore(plataforma models.Plataforma, idLoja 
 	}
 }
 
-// GetStoreStatus obtém o status atual de uma loja na plataforma especificada
-func (ps *PlatformService) GetStoreStatus(plataforma models.Plataforma, idLoja string) (*models.RespostaStatusLoja, error) {
+// GetMultipleStoreStatus obtém o status de múltiplas lojas na plataforma especificada
+func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, idsLojas []string) (*models.RespostaStatusMultiplasLojas, error) {
 	// Valida a plataforma
 	if !ps.isValidPlatform(plataforma) {
 		return nil, fmt.Errorf("plataforma não suportada: %s", plataforma)
 	}
 
-	// Implementação mock - em cenário real, chamaria API externa
-	// Por enquanto, retorna aleatoriamente status ativo
-	return &models.RespostaStatusLoja{
-		Plataforma: plataforma,
-		IdLoja:     idLoja,
-		Status:     models.StatusAtivo,
-	}, nil
+	// Chama o serviço específico baseado na plataforma
+	switch plataforma {
+	case models.PlataformaAnotaAi:
+		statusMap, err := ps.anotaAiService.GetMultipleStoreStatus(idsLojas)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao consultar status no AnotaAI: %w", err)
+		}
+
+		// Converte o mapa para a estrutura de resposta
+		lojas := make([]models.StatusLojaDetalhes, 0, len(idsLojas))
+		for _, idLoja := range idsLojas {
+			status := models.StatusInativo
+			if isActive, exists := statusMap[idLoja]; exists && isActive {
+				status = models.StatusAtivo
+			}
+
+			lojas = append(lojas, models.StatusLojaDetalhes{
+				IdLoja: idLoja,
+				Status: status,
+			})
+		}
+
+		return &models.RespostaStatusMultiplasLojas{
+			Plataforma: plataforma,
+			Lojas:      lojas,
+		}, nil
+	case models.PlataformaDeliveryVip:
+		// Implementação mock para DeliveryVip - implementar quando necessário
+		lojas := make([]models.StatusLojaDetalhes, 0, len(idsLojas))
+		for _, idLoja := range idsLojas {
+			lojas = append(lojas, models.StatusLojaDetalhes{
+				IdLoja: idLoja,
+				Status: models.StatusAtivo, // Mock sempre ativo
+			})
+		}
+
+		return &models.RespostaStatusMultiplasLojas{
+			Plataforma: plataforma,
+			Lojas:      lojas,
+		}, nil
+	default:
+		return nil, fmt.Errorf("plataforma não implementada: %s", plataforma)
+	}
 }
 
 // isValidPlatform verifica se a plataforma é suportada

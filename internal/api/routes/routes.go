@@ -26,5 +26,5 @@ func SetupRoutes(e *echo.Echo, cfg *config.Config, healthHandler *handlers.Healt
 	// Rotas de loja com autenticação
 	protected.POST("/plataformas/:plataforma/lojas/:store_id/ativar", storeHandler.Activate)
 	protected.POST("/plataformas/:plataforma/lojas/:store_id/desativar", storeHandler.Deactivate)
-	protected.GET("/plataformas/:plataforma/lojas/:store_id/status", storeHandler.GetStatus)
+	protected.GET("/plataformas/:plataforma/lojas/status", storeHandler.GetMultipleStatus)
 }
