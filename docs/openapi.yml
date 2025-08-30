@@ -1,0 +1,290 @@
+openapi: 3.0.3
+info:
+  title: Control API
+  description: |
+    API wrapper para ativação e desativação de lojas em plataformas de terceiros.
+    
+    Esta API funciona como **ponte** entre o sistema central e plataformas de terceiros 
+    (ex.: AnotaAi, Delivery VIP). O objetivo é permitir que o sistema principal ative, 
+    desative e consulte o status de lojas sem precisar integrar diretamente com cada plataforma.
+    
+    A API **não mantém banco de dados próprio** – apenas encaminha requisições para as 
+    plataformas externas e retorna o resultado.
+  version: 1.0.0
+  contact:
+    name: GRSoft
+    email: contato@grsoft.com.br
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:8080
+    description: Servidor de desenvolvimento
+  - url: https://control-api.suporte.grsoft.com.br
+    description: Servidor de produção
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token de autorização no formato Bearer
+
+  schemas:
+    RespostaOperacaoLoja:
+      type: object
+      properties:
+        plataforma:
+          type: string
+          enum: [anotaai, deliveryvip]
+          description: Identificador da plataforma
+          example: anotaai
+        id_loja:
+          type: string
+          description: Identificador da loja na plataforma
+          example: "12345"
+        status:
+          type: string
+          enum: [ativo, inativo]
+          description: Status atual da loja
+          example: ativo
+        message:
+          type: string
+          description: Mensagem de sucesso da operação
+          example: "Loja ativada com sucesso"
+      required:
+        - plataforma
+        - id_loja
+        - status
+        - message
+
+    RespostaStatusLoja:
+      type: object
+      properties:
+        plataforma:
+          type: string
+          enum: [anotaai, deliveryvip]
+          description: Identificador da plataforma
+          example: anotaai
+        id_loja:
+          type: string
+          description: Identificador da loja na plataforma
+          example: "12345"
+        status:
+          type: string
+          enum: [ativo, inativo]
+          description: Status atual da loja
+          example: ativo
+      required:
+        - plataforma
+        - id_loja
+        - status
+
+    RespostaErro:
+      type: object
+      properties:
+        error:
+          type: string
+          enum: 
+            - invalid_request
+            - unauthorized
+            - not_found
+            - bad_gateway
+            - internal_server_error
+          description: Tipo do erro
+          example: invalid_request
+        message:
+          type: string
+          description: Descrição detalhada do erro
+          example: "Parâmetros plataforma e id_loja são obrigatórios"
+      required:
+        - error
+        - message
+
+    RespostaSaude:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+      required:
+        - status
+
+  parameters:
+    ParametroPlataforma:
+      name: plataforma
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [anotaai, deliveryvip]
+      description: Identificador da plataforma
+      example: anotaai
+
+    ParametroIdLoja:
+      name: store_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identificador da loja na plataforma
+      example: "12345"
+
+  responses:
+    ErroNaoAutorizado:
+      description: Token de autorização inválido ou ausente
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespostaErro'
+          example:
+            error: unauthorized
+            message: "Token de autorização é obrigatório"
+
+    ErroRequisicaoInvalida:
+      description: Parâmetros inválidos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespostaErro'
+          example:
+            error: invalid_request
+            message: "Parâmetros plataforma e id_loja são obrigatórios"
+
+    ErroNaoEncontrado:
+      description: Plataforma ou loja não encontrada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespostaErro'
+          example:
+            error: not_found
+            message: "Plataforma não suportada: invalidplatform"
+
+    ErroBadGateway:
+      description: Erro ao comunicar com a plataforma externa
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespostaErro'
+          example:
+            error: bad_gateway
+            message: "Erro ao comunicar com a plataforma: timeout"
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      description: Verifica se a API está funcionando corretamente
+      operationId: verificacaoSaude
+      security: []
+      tags:
+        - Saude
+      responses:
+        '200':
+          description: API funcionando corretamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaSaude'
+
+  /plataformas/{plataforma}/lojas/{id_loja}/ativar:
+    post:
+      summary: Ativar loja
+      description: Ativa uma loja em uma plataforma específica
+      operationId: ativarLoja
+      tags:
+        - Lojas
+      parameters:
+        - $ref: '#/components/parameters/ParametroPlataforma'
+        - $ref: '#/components/parameters/ParametroIdLoja'
+      responses:
+        '200':
+          description: Loja ativada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaOperacaoLoja'
+              example:
+                plataforma: anotaai
+                id_loja: "12345"
+                status: ativo
+                message: "Loja ativada com sucesso"
+        '400':
+          $ref: '#/components/responses/ErroRequisicaoInvalida'
+        '401':
+          $ref: '#/components/responses/ErroNaoAutorizado'
+        '404':
+          $ref: '#/components/responses/ErroNaoEncontrado'
+        '502':
+          $ref: '#/components/responses/ErroBadGateway'
+
+  /plataformas/{plataforma}/lojas/{id_loja}/desativar:
+    post:
+      summary: Desativar loja
+      description: Desativa uma loja em uma plataforma específica
+      operationId: desativarLoja
+      tags:
+        - Lojas
+      parameters:
+        - $ref: '#/components/parameters/ParametroPlataforma'
+        - $ref: '#/components/parameters/ParametroIdLoja'
+      responses:
+        '200':
+          description: Loja desativada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaOperacaoLoja'
+              example:
+                plataforma: deliveryvip
+                id_loja: "abcd-9988"
+                status: inativo
+                message: "Loja desativada com sucesso"
+        '400':
+          $ref: '#/components/responses/ErroRequisicaoInvalida'
+        '401':
+          $ref: '#/components/responses/ErroNaoAutorizado'
+        '404':
+          $ref: '#/components/responses/ErroNaoEncontrado'
+        '502':
+          $ref: '#/components/responses/ErroBadGateway'
+
+  /plataformas/{plataforma}/lojas/{id_loja}/status:
+    get:
+      summary: Consultar status da loja
+      description: Consulta o status atual da loja diretamente na plataforma
+      operationId: obterStatusLoja
+      tags:
+        - Lojas
+      parameters:
+        - $ref: '#/components/parameters/ParametroPlataforma'
+        - $ref: '#/components/parameters/ParametroIdLoja'
+      responses:
+        '200':
+          description: Status da loja consultado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaStatusLoja'
+              example:
+                plataforma: anotaai
+                id_loja: "12345"
+                status: ativo
+        '400':
+          $ref: '#/components/responses/ErroRequisicaoInvalida'
+        '401':
+          $ref: '#/components/responses/ErroNaoAutorizado'
+        '404':
+          $ref: '#/components/responses/ErroNaoEncontrado'
+        '502':
+          $ref: '#/components/responses/ErroBadGateway'
+
+tags:
+  - name: Saude
+    description: Endpoint para verificação de saúde da API
+  - name: Lojas
+    description: Operações relacionadas às lojas

@@ -1,0 +1,70 @@
+package services
+
+import (
+	"fmt"
+
+	"delivery-control/internal/models"
+)
+
+// PlatformService gerencia a comunicação com plataformas externas
+type PlatformService struct {
+	// Em uma implementação real, isso conteria clientes HTTP para cada plataforma
+}
+
+// NewPlatformService cria um novo serviço de plataforma
+func NewPlatformService() *PlatformService {
+	return &PlatformService{}
+}
+
+// ActivateStore ativa uma loja na plataforma especificada
+func (ps *PlatformService) ActivateStore(plataforma models.Plataforma, idLoja string) (*models.RespostaOperacaoLoja, error) {
+	// Valida a plataforma
+	if !ps.isValidPlatform(plataforma) {
+		return nil, fmt.Errorf("plataforma não suportada: %s", plataforma)
+	}
+
+	// Implementação mock - em cenário real, chamaria API externa
+	return &models.RespostaOperacaoLoja{
+		Plataforma: plataforma,
+		IdLoja:     idLoja,
+		Status:     models.StatusAtivo,
+		Message:    "Loja ativada com sucesso",
+	}, nil
+}
+
+// DeactivateStore desativa uma loja na plataforma especificada
+func (ps *PlatformService) DeactivateStore(plataforma models.Plataforma, idLoja string) (*models.RespostaOperacaoLoja, error) {
+	// Valida a plataforma
+	if !ps.isValidPlatform(plataforma) {
+		return nil, fmt.Errorf("plataforma não suportada: %s", plataforma)
+	}
+
+	// Implementação mock - em cenário real, chamaria API externa
+	return &models.RespostaOperacaoLoja{
+		Plataforma: plataforma,
+		IdLoja:     idLoja,
+		Status:     models.StatusInativo,
+		Message:    "Loja desativada com sucesso",
+	}, nil
+}
+
+// GetStoreStatus obtém o status atual de uma loja na plataforma especificada
+func (ps *PlatformService) GetStoreStatus(plataforma models.Plataforma, idLoja string) (*models.RespostaStatusLoja, error) {
+	// Valida a plataforma
+	if !ps.isValidPlatform(plataforma) {
+		return nil, fmt.Errorf("plataforma não suportada: %s", plataforma)
+	}
+
+	// Implementação mock - em cenário real, chamaria API externa
+	// Por enquanto, retorna aleatoriamente status ativo
+	return &models.RespostaStatusLoja{
+		Plataforma: plataforma,
+		IdLoja:     idLoja,
+		Status:     models.StatusAtivo,
+	}, nil
+}
+
+// isValidPlatform verifica se a plataforma é suportada
+func (ps *PlatformService) isValidPlatform(plataforma models.Plataforma) bool {
+	return plataforma == models.PlataformaAnotaAi || plataforma == models.PlataformaDeliveryVip
+}
