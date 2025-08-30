@@ -26,7 +26,7 @@ func main() {
 	}
 
 	// Inicializa os serviços
-	platformService := services.NewPlatformService()
+	platformService := services.NewPlatformService(cfg)
 
 	// Inicializa os handlers
 	healthHandler := handlers.NewHealthHandler()

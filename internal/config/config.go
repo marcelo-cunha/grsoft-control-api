@@ -26,6 +26,13 @@ type AuthConfig struct {
 type PlatformConfig struct {
 	AnotaAiURL     string
 	DeliveryVipURL string
+	AnotaAi        AnotaAiConfig
+}
+
+// AnotaAiConfig contém as configurações específicas do AnotaAI
+type AnotaAiConfig struct {
+	Email    string
+	Password string
 }
 
 // Load carrega a configuração das variáveis de ambiente
@@ -38,8 +45,12 @@ func Load() *Config {
 			BearerToken: getEnv("BEARER_TOKEN", ""),
 		},
 		Platforms: PlatformConfig{
-			AnotaAiURL:     getEnv("ANOTAAI_API_URL", "https://api.anotaai.com"),
+			AnotaAiURL:     getEnv("ANOTAAI_API_URL", "https://integration-admin.api.anota.ai"),
 			DeliveryVipURL: getEnv("DELIVERYVIP_API_URL", "https://api.deliveryvip.com"),
+			AnotaAi: AnotaAiConfig{
+				Email:    getEnv("ANOTAAI_EMAIL", ""),
+				Password: getEnv("ANOTAAI_PASSWORD", ""),
+			},
 		},
 	}
 }
