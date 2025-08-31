@@ -17,8 +17,6 @@ info:
   license:
     name: MIT
 servers:
-  - url: http://localhost:8080
-    description: Servidor de desenvolvimento
   - url: https://control-api.suporte.grsoft.com.br
     description: Servidor de produção
 
