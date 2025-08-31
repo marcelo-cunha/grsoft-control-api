@@ -45,13 +45,13 @@ components:
         id_loja:
           type: string
           description: Identificador da loja na plataforma
-          example: "12345"
+          example: "68ae03ea4f39ca0019098cd3"
         status:
           type: string
           enum: [ativo, inativo]
           description: Status atual da loja
           example: ativo
-        message:
+        mensagem:
           type: string
           description: Mensagem de sucesso da operação
           example: "Loja ativada com sucesso"
@@ -59,7 +59,7 @@ components:
         - plataforma
         - id_loja
         - status
-        - message
+        - mensagem
 
     RespostaStatusMultiplasLojas:
       type: object
@@ -84,7 +84,7 @@ components:
         id_loja:
           type: string
           description: Identificador da loja na plataforma
-          example: "12345"
+          example: "678fab971459fe0019a59c8c"
         status:
           type: string
           enum: [ativo, inativo, nao_encontrado]
@@ -111,13 +111,13 @@ components:
             - internal_server_error
           description: Tipo do erro
           example: invalid_request
-        message:
+        mensagem:
           type: string
           description: Descrição detalhada do erro
           example: "Parâmetros plataforma e id_loja são obrigatórios"
       required:
         - error
-        - message
+        - mensagem
 
     RespostaSaude:
       type: object
@@ -140,13 +140,13 @@ components:
       example: anotaai
 
     ParametroIdLoja:
-      name: store_id
+      name: id_loja
       in: path
       required: true
       schema:
         type: string
       description: Identificador da loja na plataforma
-      example: "12345"
+      example: "68ae03ea4f39ca0019098cd3"
 
   responses:
     ErroNaoAutorizado:
@@ -157,7 +157,7 @@ components:
             $ref: '#/components/schemas/RespostaErro'
           example:
             error: unauthorized
-            message: "Token de autorização é obrigatório"
+            mensagem: "Token de autorização é obrigatório"
 
     ErroRequisicaoInvalida:
       description: Parâmetros inválidos
@@ -167,7 +167,7 @@ components:
             $ref: '#/components/schemas/RespostaErro'
           example:
             error: invalid_request
-            message: "Parâmetros plataforma e id_loja são obrigatórios"
+            mensagem: "Parâmetros plataforma e id_loja são obrigatórios"
 
     ErroNaoEncontrado:
       description: Plataforma não suportada ou loja não encontrada na plataforma
@@ -179,11 +179,11 @@ components:
             plataforma_nao_suportada:
               value:
                 error: not_found
-                message: "Plataforma não suportada: invalidplatform"
+                mensagem: "Plataforma não suportada: invalidplatform"
             loja_nao_encontrada:
               value:
                 error: not_found
-                message: "Loja não encontrada na plataforma"
+                mensagem: "Loja não encontrada na plataforma"
 
     ErroBadGateway:
       description: Erro ao comunicar com a plataforma externa
@@ -193,7 +193,7 @@ components:
             $ref: '#/components/schemas/RespostaErro'
           example:
             error: bad_gateway
-            message: "Erro ao comunicar com a plataforma: timeout"
+            mensagem: "Erro ao comunicar com a plataforma: timeout"
 
 paths:
   /health:
@@ -231,9 +231,9 @@ paths:
                 $ref: '#/components/schemas/RespostaOperacaoLoja'
               example:
                 plataforma: anotaai
-                id_loja: "12345"
+                id_loja: "68ae03ea4f39ca0019098cd3"
                 status: ativo
-                message: "Loja ativada com sucesso"
+                mensagem: "Loja ativada com sucesso"
         '400':
           $ref: '#/components/responses/ErroRequisicaoInvalida'
         '401':
@@ -262,9 +262,9 @@ paths:
                 $ref: '#/components/schemas/RespostaOperacaoLoja'
               example:
                 plataforma: deliveryvip
-                id_loja: "abcd-9988"
+                id_loja: "64d3eebb-b3c3-4d13-9297-bd1735b12c6d"
                 status: inativo
-                message: "Loja desativada com sucesso"
+                mensagem: "Loja desativada com sucesso"
         '400':
           $ref: '#/components/responses/ErroRequisicaoInvalida'
         '401':
@@ -284,7 +284,7 @@ paths:
         
         **Exemplo de uso:**
         ```
-        GET /plataformas/anotaai/lojas/status?ids=12345,67890,abcdef
+        GET /plataformas/anotaai/lojas/status?ids=68ae03ea4f39ca0019098cd3,678fab971459fe0019a59c8c
         ```
       operationId: obterStatusMultiplasLojas
       tags:
@@ -297,7 +297,7 @@ paths:
           schema:
             type: string
           description: Lista de IDs das lojas separados por vírgula
-          example: "12345,67890,abcdef"
+          example: "68ae03ea4f39ca0019098cd3,678fab971459fe0019a59c8c"
       responses:
         '200':
           description: Status das lojas consultado com sucesso
@@ -308,11 +308,11 @@ paths:
               example:
                 plataforma: deliveryvip
                 lojas:
-                  - id_loja: "12345"
+                  - id_loja: "64d3eebb-b3c3-4d13-9297-bd1735b12c6d"
                     status: ativo
-                  - id_loja: "67890"
+                  - id_loja: "8b302253-de01-444b-bbd5-8289419c899f"
                     status: inativo
-                  - id_loja: "abcdef"
+                  - id_loja: "b34de25f-82c6-4206-b9cf-4a8f95c40dea"
                     status: nao_encontrado
         '400':
           $ref: '#/components/responses/ErroRequisicaoInvalida'

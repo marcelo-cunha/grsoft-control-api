@@ -19,11 +19,11 @@ import (
 type DeliveryVipError struct {
 	HTTPStatus int
 	TipoErro   models.TipoErro
-	Message    string
+	Mensagem   string
 }
 
 func (e *DeliveryVipError) Error() string {
-	return e.Message
+	return e.Mensagem
 }
 
 // NewDeliveryVipError cria um novo erro específico do DeliveryVip baseado no status HTTP
@@ -33,25 +33,25 @@ func NewDeliveryVipError(httpStatus int, responseBody string) error {
 		return &DeliveryVipError{
 			HTTPStatus: httpStatus,
 			TipoErro:   models.ErroNaoEncontrado,
-			Message:    "Loja não encontrada na plataforma",
+			Mensagem:   "Loja não encontrada na plataforma",
 		}
 	case http.StatusUnauthorized:
 		return &DeliveryVipError{
 			HTTPStatus: httpStatus,
 			TipoErro:   models.ErroNaoAutorizado,
-			Message:    "Erro de autenticação com a plataforma",
+			Mensagem:   "Erro de autenticação com a plataforma",
 		}
 	case http.StatusUnprocessableEntity:
 		return &DeliveryVipError{
 			HTTPStatus: httpStatus,
 			TipoErro:   models.ErroRequisicaoInvalida,
-			Message:    "Dados inválidos para a operação",
+			Mensagem:   "Dados inválidos para a operação",
 		}
 	default:
 		return &DeliveryVipError{
 			HTTPStatus: httpStatus,
 			TipoErro:   models.ErroBadGateway,
-			Message:    fmt.Sprintf("Erro na comunicação com a plataforma - Status: %d, Resposta: %s", httpStatus, responseBody),
+			Mensagem:   fmt.Sprintf("Erro na comunicação com a plataforma - Status: %d, Resposta: %s", httpStatus, responseBody),
 		}
 	}
 }

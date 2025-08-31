@@ -18,16 +18,16 @@ func AuthMiddleware(cfg *config.Config) echo.MiddlewareFunc {
 			authHeader := c.Request().Header.Get("Authorization")
 			if authHeader == "" {
 				return c.JSON(http.StatusUnauthorized, models.RespostaErro{
-					Error:   models.ErroNaoAutorizado,
-					Message: "Token de autorização é obrigatório",
+					Error:    models.ErroNaoAutorizado,
+					Mensagem: "Token de autorização é obrigatório",
 				})
 			}
 
 			// Verifica se começa com "Bearer "
 			if !strings.HasPrefix(authHeader, "Bearer ") {
 				return c.JSON(http.StatusUnauthorized, models.RespostaErro{
-					Error:   models.ErroNaoAutorizado,
-					Message: "Formato do token inválido. Use 'Bearer <token>'",
+					Error:    models.ErroNaoAutorizado,
+					Mensagem: "Formato do token inválido. Use 'Bearer <token>'",
 				})
 			}
 
@@ -35,16 +35,16 @@ func AuthMiddleware(cfg *config.Config) echo.MiddlewareFunc {
 			token := strings.TrimPrefix(authHeader, "Bearer ")
 			if token == "" {
 				return c.JSON(http.StatusUnauthorized, models.RespostaErro{
-					Error:   models.ErroNaoAutorizado,
-					Message: "Token não fornecido",
+					Error:    models.ErroNaoAutorizado,
+					Mensagem: "Token não fornecido",
 				})
 			}
 
 			// Valida o token contra o token configurado
 			if token != cfg.Auth.BearerToken {
 				return c.JSON(http.StatusUnauthorized, models.RespostaErro{
-					Error:   models.ErroNaoAutorizado,
-					Message: "Token inválido",
+					Error:    models.ErroNaoAutorizado,
+					Mensagem: "Token inválido",
 				})
 			}
 

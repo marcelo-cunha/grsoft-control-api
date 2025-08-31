@@ -41,23 +41,23 @@ func (sh *StoreHandler) handlePlatformError(c echo.Context, err error) error {
 		}
 
 		return c.JSON(statusCode, models.RespostaErro{
-			Error:   deliveryVipErr.TipoErro,
-			Message: deliveryVipErr.Message,
+			Error:    deliveryVipErr.TipoErro,
+			Mensagem: deliveryVipErr.Mensagem,
 		})
 	}
 
 	// Verifica se é erro de plataforma não suportada
 	if err.Error() == "plataforma não suportada: "+c.Param("plataforma") {
 		return c.JSON(http.StatusNotFound, models.RespostaErro{
-			Error:   models.ErroNaoEncontrado,
-			Message: err.Error(),
+			Error:    models.ErroNaoEncontrado,
+			Mensagem: err.Error(),
 		})
 	}
 
 	// Erro genérico - bad gateway
 	return c.JSON(http.StatusBadGateway, models.RespostaErro{
-		Error:   models.ErroBadGateway,
-		Message: "Erro ao comunicar com a plataforma: " + err.Error(),
+		Error:    models.ErroBadGateway,
+		Mensagem: "Erro ao comunicar com a plataforma: " + err.Error(),
 	})
 }
 
@@ -69,8 +69,8 @@ func (sh *StoreHandler) Activate(c echo.Context) error {
 	// Valida parâmetros obrigatórios
 	if plataforma == "" || idLoja == "" {
 		return c.JSON(http.StatusBadRequest, models.RespostaErro{
-			Error:   models.ErroRequisicaoInvalida,
-			Message: "Parâmetros plataforma e id_loja são obrigatórios",
+			Error:    models.ErroRequisicaoInvalida,
+			Mensagem: "Parâmetros plataforma e id_loja são obrigatórios",
 		})
 	}
 
@@ -91,8 +91,8 @@ func (sh *StoreHandler) Deactivate(c echo.Context) error {
 	// Valida parâmetros obrigatórios
 	if plataforma == "" || idLoja == "" {
 		return c.JSON(http.StatusBadRequest, models.RespostaErro{
-			Error:   models.ErroRequisicaoInvalida,
-			Message: "Parâmetros plataforma e id_loja são obrigatórios",
+			Error:    models.ErroRequisicaoInvalida,
+			Mensagem: "Parâmetros plataforma e id_loja são obrigatórios",
 		})
 	}
 
@@ -113,15 +113,15 @@ func (sh *StoreHandler) GetMultipleStatus(c echo.Context) error {
 	// Valida parâmetros obrigatórios
 	if plataforma == "" {
 		return c.JSON(http.StatusBadRequest, models.RespostaErro{
-			Error:   models.ErroRequisicaoInvalida,
-			Message: "Parâmetro plataforma é obrigatório",
+			Error:    models.ErroRequisicaoInvalida,
+			Mensagem: "Parâmetro plataforma é obrigatório",
 		})
 	}
 
 	if idsParam == "" {
 		return c.JSON(http.StatusBadRequest, models.RespostaErro{
-			Error:   models.ErroRequisicaoInvalida,
-			Message: "Parâmetro 'ids' é obrigatório. Use ?ids=id1,id2,id3",
+			Error:    models.ErroRequisicaoInvalida,
+			Mensagem: "Parâmetro 'ids' é obrigatório. Use ?ids=id1,id2,id3",
 		})
 	}
 
@@ -136,8 +136,8 @@ func (sh *StoreHandler) GetMultipleStatus(c echo.Context) error {
 
 	if len(idsLojas) == 0 {
 		return c.JSON(http.StatusBadRequest, models.RespostaErro{
-			Error:   models.ErroRequisicaoInvalida,
-			Message: "Pelo menos um ID de loja deve ser fornecido",
+			Error:    models.ErroRequisicaoInvalida,
+			Mensagem: "Pelo menos um ID de loja deve ser fornecido",
 		})
 	}
 
@@ -147,15 +147,15 @@ func (sh *StoreHandler) GetMultipleStatus(c echo.Context) error {
 		// Verifica o tipo de erro para determinar o status HTTP apropriado
 		if strings.Contains(err.Error(), "plataforma não suportada") {
 			return c.JSON(http.StatusNotFound, models.RespostaErro{
-				Error:   models.ErroNaoEncontrado,
-				Message: err.Error(),
+				Error:    models.ErroNaoEncontrado,
+				Mensagem: err.Error(),
 			})
 		}
 
 		// Erro genérico - poderia ser bad gateway em implementação real
 		return c.JSON(http.StatusBadGateway, models.RespostaErro{
-			Error:   models.ErroBadGateway,
-			Message: "Erro ao comunicar com a plataforma: " + err.Error(),
+			Error:    models.ErroBadGateway,
+			Mensagem: "Erro ao comunicar com a plataforma: " + err.Error(),
 		})
 	}
 

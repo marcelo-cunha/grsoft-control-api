@@ -38,7 +38,7 @@ func (ps *PlatformService) ActivateStore(plataforma models.Plataforma, idLoja st
 			Plataforma: plataforma,
 			IdLoja:     idLoja,
 			Status:     models.StatusAtivo,
-			Message:    "Loja ativada com sucesso",
+			Mensagem:   "Loja ativada com sucesso",
 		}, nil
 	case models.PlataformaDeliveryVip:
 		if err := ps.deliveryVipService.ActivateStore(idLoja); err != nil {
@@ -48,7 +48,7 @@ func (ps *PlatformService) ActivateStore(plataforma models.Plataforma, idLoja st
 			Plataforma: plataforma,
 			IdLoja:     idLoja,
 			Status:     models.StatusAtivo,
-			Message:    "Loja ativada com sucesso",
+			Mensagem:   "Loja ativada com sucesso",
 		}, nil
 	default:
 		return nil, fmt.Errorf("plataforma não implementada: %s", plataforma)
@@ -72,7 +72,7 @@ func (ps *PlatformService) DeactivateStore(plataforma models.Plataforma, idLoja 
 			Plataforma: plataforma,
 			IdLoja:     idLoja,
 			Status:     models.StatusInativo,
-			Message:    "Loja desativada com sucesso",
+			Mensagem:   "Loja desativada com sucesso",
 		}, nil
 	case models.PlataformaDeliveryVip:
 		if err := ps.deliveryVipService.DeactivateStore(idLoja); err != nil {
@@ -82,7 +82,7 @@ func (ps *PlatformService) DeactivateStore(plataforma models.Plataforma, idLoja 
 			Plataforma: plataforma,
 			IdLoja:     idLoja,
 			Status:     models.StatusInativo,
-			Message:    "Loja desativada com sucesso",
+			Mensagem:   "Loja desativada com sucesso",
 		}, nil
 	default:
 		return nil, fmt.Errorf("plataforma não implementada: %s", plataforma)

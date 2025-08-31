@@ -35,8 +35,8 @@ type LoginResponse struct {
 
 // AnotaAiResponse representa uma resposta padrão do AnotaAI
 type AnotaAiResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Success  bool   `json:"success"`
+	Mensagem string `json:"mensagem"`
 }
 
 // AnotaAiListPagesResponse representa a resposta da API de listagem de páginas
@@ -213,7 +213,7 @@ func (s *AnotaAiService) ActivateStore(idLoja string) error {
 	}
 
 	if !anotaResp.Success {
-		return fmt.Errorf("ativação falhou: %s", anotaResp.Message)
+		return fmt.Errorf("ativação falhou: %s", anotaResp.Mensagem)
 	}
 
 	return nil
@@ -250,7 +250,7 @@ func (s *AnotaAiService) DeactivateStore(idLoja string) error {
 	}
 
 	if !anotaResp.Success {
-		return fmt.Errorf("desativação falhou: %s", anotaResp.Message)
+		return fmt.Errorf("desativação falhou: %s", anotaResp.Mensagem)
 	}
 
 	return nil

@@ -33,7 +33,7 @@ type RespostaOperacaoLoja struct {
 	Plataforma Plataforma `json:"plataforma"`
 	IdLoja     string     `json:"id_loja"`
 	Status     Status     `json:"status"`
-	Message    string     `json:"message"`
+	Mensagem   string     `json:"mensagem"`
 }
 
 // RespostaStatusMultiplasLojas representa a resposta para consulta de status de múltiplas lojas
@@ -50,8 +50,8 @@ type StatusLojaDetalhes struct {
 
 // RespostaErro representa uma resposta de erro
 type RespostaErro struct {
-	Error   TipoErro `json:"error"`
-	Message string   `json:"message"`
+	Error    TipoErro `json:"error"`
+	Mensagem string   `json:"mensagem"`
 }
 
 // RespostaSaude representa a resposta do health check
