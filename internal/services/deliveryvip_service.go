@@ -257,8 +257,14 @@ func (s *DeliveryVipService) DeactivateStore(merchantID string) error {
 	return nil
 }
 
+// StoreStatusResult representa o resultado do status de uma loja
+type StoreStatusResult struct {
+	Found    bool
+	IsActive bool
+}
+
 // GetMultipleStoreStatus consulta o status de múltiplas lojas no DeliveryVip
-func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[string]bool, error) {
+func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[string]StoreStatusResult, error) {
 	token := s.getAccessToken()
 	if token == "" {
 		return nil, fmt.Errorf("token de acesso não disponível")
@@ -275,12 +281,7 @@ func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[s
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "*/*")
 
-	// Adiciona os headers x-partners para cada merchant ID
-	for _, merchantID := range merchantIDs {
-		req.Header.Add("x-partners", merchantID)
-	}
-
-	log.Printf("[DeliveryVip] Consultando status de %d lojas", len(merchantIDs))
+	log.Printf("[DeliveryVip] Consultando todas as lojas para filtrar %d IDs solicitados", len(merchantIDs))
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
@@ -302,15 +303,48 @@ func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[s
 		return nil, fmt.Errorf("erro ao decodificar resposta de merchants: %w", err)
 	}
 
-	// Constrói mapa de status
-	statusMap := make(map[string]bool)
-
-	for _, merchant := range merchants {
-		// Status ativo = subscription.status == "ACTIVATED" && !subscription.blocked
-		isActive := merchant.Subscription.Status == "ACTIVATED" && !merchant.Subscription.Blocked
-		statusMap[merchant.ID] = isActive
+	// Cria um set dos IDs solicitados para busca rápida
+	requestedIDs := make(map[string]bool)
+	for _, id := range merchantIDs {
+		requestedIDs[id] = true
 	}
 
-	log.Printf("[DeliveryVip] Status consultado para %d lojas", len(statusMap))
+	// Filtra apenas as lojas solicitadas e constrói mapa de status
+	statusMap := make(map[string]StoreStatusResult)
+
+	for _, merchant := range merchants {
+		// Só processa se o ID foi solicitado
+		if requestedIDs[merchant.ID] {
+			// Status ativo = subscription.status == "ACTIVATED" && !subscription.blocked
+			isActive := merchant.Subscription.Status == "ACTIVATED" && !merchant.Subscription.Blocked
+			statusMap[merchant.ID] = StoreStatusResult{
+				Found:    true,
+				IsActive: isActive,
+			}
+		}
+	}
+
+	// Adiciona lojas não encontradas
+	for _, id := range merchantIDs {
+		if _, exists := statusMap[id]; !exists {
+			statusMap[id] = StoreStatusResult{
+				Found:    false,
+				IsActive: false,
+			}
+		}
+	}
+
+	log.Printf("[DeliveryVip] Status consultado: %d/%d lojas encontradas", len(statusMap)-countNotFound(statusMap), len(merchantIDs))
 	return statusMap, nil
+}
+
+// countNotFound conta quantas lojas não foram encontradas
+func countNotFound(statusMap map[string]StoreStatusResult) int {
+	count := 0
+	for _, result := range statusMap {
+		if !result.Found {
+			count++
+		}
+	}
+	return count
 }

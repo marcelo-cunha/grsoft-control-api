@@ -2,7 +2,6 @@ package config
 
 import (
 	"os"
-	"strconv"
 )
 
 // Config contém toda a configuração da aplicação
@@ -70,16 +69,6 @@ func Load() *Config {
 func getEnv(key, fallback string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
-	}
-	return fallback
-}
-
-// getEnvAsInt obtém uma variável de ambiente como int com um valor padrão
-func getEnvAsInt(key string, fallback int) int {
-	if value := os.Getenv(key); value != "" {
-		if intVal, err := strconv.Atoi(value); err == nil {
-			return intVal
-		}
 	}
 	return fallback
 }

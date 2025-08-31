@@ -87,8 +87,12 @@ components:
           example: "12345"
         status:
           type: string
-          enum: [ativo, inativo]
-          description: Status atual da loja
+          enum: [ativo, inativo, nao_encontrado]
+          description: |
+            Status atual da loja:
+            - `ativo`: Loja encontrada e ativa na plataforma
+            - `inativo`: Loja encontrada mas inativa na plataforma
+            - `nao_encontrado`: Loja não encontrada na plataforma
           example: ativo
       required:
         - id_loja
@@ -199,7 +203,7 @@ paths:
       operationId: verificacaoSaude
       security: []
       tags:
-        - Saude
+        - Health Check
       responses:
         '200':
           description: API funcionando corretamente
@@ -302,14 +306,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/RespostaStatusMultiplasLojas'
               example:
-                plataforma: anotaai
+                plataforma: deliveryvip
                 lojas:
                   - id_loja: "12345"
                     status: ativo
                   - id_loja: "67890"
                     status: inativo
                   - id_loja: "abcdef"
-                    status: ativo
+                    status: nao_encontrado
         '400':
           $ref: '#/components/responses/ErroRequisicaoInvalida'
         '401':
@@ -320,7 +324,7 @@ paths:
           $ref: '#/components/responses/ErroBadGateway'
 
 tags:
-  - name: Saude
+  - name: Health Check
     description: Endpoint para verificação de saúde da API
   - name: Lojas
     description: Operações relacionadas às lojas

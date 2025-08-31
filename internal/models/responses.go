@@ -12,8 +12,9 @@ const (
 type Status string
 
 const (
-	StatusAtivo   Status = "ativo"
-	StatusInativo Status = "inativo"
+	StatusAtivo         Status = "ativo"
+	StatusInativo       Status = "inativo"
+	StatusNaoEncontrado Status = "nao_encontrado"
 )
 
 // TipoErro representa os tipos de erro da API

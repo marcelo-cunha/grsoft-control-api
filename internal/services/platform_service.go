@@ -131,9 +131,18 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 		// Converte o mapa para a estrutura de resposta
 		lojas := make([]models.StatusLojaDetalhes, 0, len(idsLojas))
 		for _, idLoja := range idsLojas {
-			status := models.StatusInativo
-			if isActive, exists := statusMap[idLoja]; exists && isActive {
-				status = models.StatusAtivo
+			var status models.Status
+			if result, exists := statusMap[idLoja]; exists {
+				if !result.Found {
+					status = models.StatusNaoEncontrado
+				} else if result.IsActive {
+					status = models.StatusAtivo
+				} else {
+					status = models.StatusInativo
+				}
+			} else {
+				// Fallback case (não deveria acontecer)
+				status = models.StatusNaoEncontrado
 			}
 
 			lojas = append(lojas, models.StatusLojaDetalhes{
