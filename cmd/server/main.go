@@ -31,12 +31,13 @@ func main() {
 	// Inicializa os handlers
 	healthHandler := handlers.NewHealthHandler()
 	storeHandler := handlers.NewStoreHandler(platformService)
+	docsHandler := handlers.NewDocsHandler()
 
 	// Cria a instância do Echo
 	e := echo.New()
 
 	// Configura as rotas
-	routes.SetupRoutes(e, cfg, healthHandler, storeHandler)
+	routes.SetupRoutes(e, cfg, healthHandler, storeHandler, docsHandler)
 
 	// Inicia o servidor
 	address := fmt.Sprintf(":%s", cfg.Server.Port)

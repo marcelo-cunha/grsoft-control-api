@@ -10,20 +10,27 @@ import (
 )
 
 // SetupRoutes configura todas as rotas da aplicação
-func SetupRoutes(e *echo.Echo, cfg *config.Config, healthHandler *handlers.HealthHandler, storeHandler *handlers.StoreHandler) {
+func SetupRoutes(e *echo.Echo, cfg *config.Config, healthHandler *handlers.HealthHandler, storeHandler *handlers.StoreHandler, docsHandler *handlers.DocsHandler) {
 	// Adiciona middleware comum
 	e.Use(echomiddleware.Recover())
 	e.Use(echomiddleware.CORS())
 
-	// Endpoint de verificação de saúde (sem autenticação e sem logs)
-	e.GET("/health", healthHandler.Check)
+	// Cria um grupo para rotas públicas (sem autenticação)
+	public := e.Group("")
+
+	// Health check
+	public.GET("/health", healthHandler.Check)
+
+	// Documentação da API
+	public.GET("/docs", docsHandler.ServeHTML)
+	public.GET("/docs/openapi.yml", docsHandler.ServeOpenAPI)
 
 	// Cria um grupo para rotas protegidas com logger
 	protected := e.Group("")
 	protected.Use(echomiddleware.Logger())
 	protected.Use(middleware.AuthMiddleware(cfg))
 
-	// Rotas de loja com autenticação
+	// Operações de loja
 	protected.POST("/plataformas/:plataforma/lojas/:store_id/ativar", storeHandler.Activate)
 	protected.POST("/plataformas/:plataforma/lojas/:store_id/desativar", storeHandler.Deactivate)
 	protected.GET("/plataformas/:plataforma/lojas/status", storeHandler.GetMultipleStatus)

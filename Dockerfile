@@ -36,6 +36,9 @@ WORKDIR /app
 # Copy binary from build stage
 COPY --from=builder /build/server .
 
+# Copy docs folder for OpenAPI documentation
+COPY --from=builder /build/docs ./docs
+
 # Change ownership to appuser
 RUN chown -R appuser:appgroup /app
 
