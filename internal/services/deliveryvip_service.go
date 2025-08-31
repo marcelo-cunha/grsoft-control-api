@@ -12,7 +12,49 @@ import (
 	"time"
 
 	"delivery-control/internal/config"
+	"delivery-control/internal/models"
 )
+
+// DeliveryVipError representa um erro específico da API DeliveryVip
+type DeliveryVipError struct {
+	HTTPStatus int
+	TipoErro   models.TipoErro
+	Message    string
+}
+
+func (e *DeliveryVipError) Error() string {
+	return e.Message
+}
+
+// NewDeliveryVipError cria um novo erro específico do DeliveryVip baseado no status HTTP
+func NewDeliveryVipError(httpStatus int, responseBody string) error {
+	switch httpStatus {
+	case http.StatusNotFound:
+		return &DeliveryVipError{
+			HTTPStatus: httpStatus,
+			TipoErro:   models.ErroNaoEncontrado,
+			Message:    "Loja não encontrada na plataforma",
+		}
+	case http.StatusUnauthorized:
+		return &DeliveryVipError{
+			HTTPStatus: httpStatus,
+			TipoErro:   models.ErroNaoAutorizado,
+			Message:    "Erro de autenticação com a plataforma",
+		}
+	case http.StatusUnprocessableEntity:
+		return &DeliveryVipError{
+			HTTPStatus: httpStatus,
+			TipoErro:   models.ErroRequisicaoInvalida,
+			Message:    "Dados inválidos para a operação",
+		}
+	default:
+		return &DeliveryVipError{
+			HTTPStatus: httpStatus,
+			TipoErro:   models.ErroBadGateway,
+			Message:    fmt.Sprintf("Erro na comunicação com a plataforma - Status: %d, Resposta: %s", httpStatus, responseBody),
+		}
+	}
+}
 
 // DeliveryVipService gerencia a integração com DeliveryVip
 type DeliveryVipService struct {
@@ -174,7 +216,7 @@ func (s *DeliveryVipService) ActivateStore(merchantID string) error {
 
 	if resp.StatusCode != http.StatusAccepted {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("erro ao desbloquear loja - Status: %d, Resposta: %s", resp.StatusCode, string(body))
+		return NewDeliveryVipError(resp.StatusCode, string(body))
 	}
 
 	log.Printf("[DeliveryVip] Loja %s desbloqueada com sucesso", merchantID)
@@ -208,7 +250,7 @@ func (s *DeliveryVipService) DeactivateStore(merchantID string) error {
 
 	if resp.StatusCode != http.StatusAccepted {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("erro ao bloquear loja - Status: %d, Resposta: %s", resp.StatusCode, string(body))
+		return NewDeliveryVipError(resp.StatusCode, string(body))
 	}
 
 	log.Printf("[DeliveryVip] Loja %s bloqueada com sucesso", merchantID)

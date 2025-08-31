@@ -166,14 +166,20 @@ components:
             message: "Parâmetros plataforma e id_loja são obrigatórios"
 
     ErroNaoEncontrado:
-      description: Plataforma ou loja não encontrada
+      description: Plataforma não suportada ou loja não encontrada na plataforma
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/RespostaErro'
-          example:
-            error: not_found
-            message: "Plataforma não suportada: invalidplatform"
+          examples:
+            plataforma_nao_suportada:
+              value:
+                error: not_found
+                message: "Plataforma não suportada: invalidplatform"
+            loja_nao_encontrada:
+              value:
+                error: not_found
+                message: "Loja não encontrada na plataforma"
 
     ErroBadGateway:
       description: Erro ao comunicar com a plataforma externa
