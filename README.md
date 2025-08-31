@@ -12,7 +12,9 @@ PORT=8080
 ANOTAAI_API_URL=https://integration-admin.api.anota.ai
 ANOTAAI_EMAIL=seu-email@exemplo.com.br
 ANOTAAI_PASSWORD=sua-senha
-DELIVERYVIP_API_URL=https://api.deliveryvip.com
+DELIVERYVIP_API_URL=https://api.deliveryvip.com.br
+DELIVERYVIP_CLIENT_ID=1a2b3c4d-2dcb-3c4d-1a2b-3c9f6e5e8a1b
+DELIVERYVIP_CLIENT_SECRET=example
 ```
 
 ## Endpoints

@@ -9,13 +9,15 @@ import (
 
 // PlatformService gerencia a comunicação com plataformas externas
 type PlatformService struct {
-	anotaAiService *AnotaAiService
+	anotaAiService     *AnotaAiService
+	deliveryVipService *DeliveryVipService
 }
 
 // NewPlatformService cria um novo serviço de plataforma
 func NewPlatformService(cfg *config.Config) *PlatformService {
 	return &PlatformService{
-		anotaAiService: NewAnotaAiService(cfg),
+		anotaAiService:     NewAnotaAiService(cfg),
+		deliveryVipService: NewDeliveryVipService(cfg),
 	}
 }
 
@@ -39,12 +41,14 @@ func (ps *PlatformService) ActivateStore(plataforma models.Plataforma, idLoja st
 			Message:    "Loja ativada com sucesso",
 		}, nil
 	case models.PlataformaDeliveryVip:
-		// Implementação mock para DeliveryVip - implementar quando necessário
+		if err := ps.deliveryVipService.ActivateStore(idLoja); err != nil {
+			return nil, fmt.Errorf("erro ao ativar loja no DeliveryVip: %w", err)
+		}
 		return &models.RespostaOperacaoLoja{
 			Plataforma: plataforma,
 			IdLoja:     idLoja,
 			Status:     models.StatusAtivo,
-			Message:    "Loja ativada com sucesso (mock)",
+			Message:    "Loja ativada com sucesso",
 		}, nil
 	default:
 		return nil, fmt.Errorf("plataforma não implementada: %s", plataforma)
@@ -71,12 +75,14 @@ func (ps *PlatformService) DeactivateStore(plataforma models.Plataforma, idLoja 
 			Message:    "Loja desativada com sucesso",
 		}, nil
 	case models.PlataformaDeliveryVip:
-		// Implementação mock para DeliveryVip - implementar quando necessário
+		if err := ps.deliveryVipService.DeactivateStore(idLoja); err != nil {
+			return nil, fmt.Errorf("erro ao desativar loja no DeliveryVip: %w", err)
+		}
 		return &models.RespostaOperacaoLoja{
 			Plataforma: plataforma,
 			IdLoja:     idLoja,
 			Status:     models.StatusInativo,
-			Message:    "Loja desativada com sucesso (mock)",
+			Message:    "Loja desativada com sucesso",
 		}, nil
 	default:
 		return nil, fmt.Errorf("plataforma não implementada: %s", plataforma)
@@ -117,12 +123,22 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 			Lojas:      lojas,
 		}, nil
 	case models.PlataformaDeliveryVip:
-		// Implementação mock para DeliveryVip - implementar quando necessário
+		statusMap, err := ps.deliveryVipService.GetMultipleStoreStatus(idsLojas)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao consultar status das lojas no DeliveryVip: %w", err)
+		}
+
+		// Converte o mapa para a estrutura de resposta
 		lojas := make([]models.StatusLojaDetalhes, 0, len(idsLojas))
 		for _, idLoja := range idsLojas {
+			status := models.StatusInativo
+			if isActive, exists := statusMap[idLoja]; exists && isActive {
+				status = models.StatusAtivo
+			}
+
 			lojas = append(lojas, models.StatusLojaDetalhes{
 				IdLoja: idLoja,
-				Status: models.StatusAtivo, // Mock sempre ativo
+				Status: status,
 			})
 		}
 
