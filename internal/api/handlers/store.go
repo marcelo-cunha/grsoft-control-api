@@ -61,21 +61,37 @@ func (sh *StoreHandler) handlePlatformError(c echo.Context, err error) error {
 	})
 }
 
-// Activate gerencia POST /plataformas/{plataforma}/lojas/{id_loja}/ativar
-func (sh *StoreHandler) Activate(c echo.Context) error {
+// ActivateMultiple gerencia POST /plataformas/{plataforma}/lojas/ativar
+func (sh *StoreHandler) ActivateMultiple(c echo.Context) error {
 	plataforma := models.Plataforma(c.Param("plataforma"))
-	idLoja := c.Param("store_id")
 
-	// Valida parâmetros obrigatórios
-	if plataforma == "" || idLoja == "" {
+	// Valida parâmetro obrigatório
+	if plataforma == "" {
 		return c.JSON(http.StatusBadRequest, models.RespostaErro{
 			Error:    models.ErroRequisicaoInvalida,
-			Mensagem: "Parâmetros plataforma e id_loja são obrigatórios",
+			Mensagem: "Parâmetro plataforma é obrigatório",
+		})
+	}
+
+	// Decodifica o body da requisição
+	var req models.RequisicaoMultiplasLojas
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.RespostaErro{
+			Error:    models.ErroRequisicaoInvalida,
+			Mensagem: "Body da requisição inválido: " + err.Error(),
+		})
+	}
+
+	// Valida se há IDs no body
+	if len(req.IdsLojas) == 0 {
+		return c.JSON(http.StatusBadRequest, models.RespostaErro{
+			Error:    models.ErroRequisicaoInvalida,
+			Mensagem: "Campo 'ids_lojas' é obrigatório e deve conter pelo menos um ID",
 		})
 	}
 
 	// Chama o serviço da plataforma
-	response, err := sh.platformService.ActivateStore(plataforma, idLoja)
+	response, err := sh.platformService.ActivateMultipleStores(string(plataforma), req.IdsLojas)
 	if err != nil {
 		return sh.handlePlatformError(c, err)
 	}
@@ -83,21 +99,37 @@ func (sh *StoreHandler) Activate(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-// Deactivate gerencia POST /plataformas/{plataforma}/lojas/{id_loja}/desativar
-func (sh *StoreHandler) Deactivate(c echo.Context) error {
+// DeactivateMultiple gerencia POST /plataformas/{plataforma}/lojas/desativar
+func (sh *StoreHandler) DeactivateMultiple(c echo.Context) error {
 	plataforma := models.Plataforma(c.Param("plataforma"))
-	idLoja := c.Param("store_id")
 
-	// Valida parâmetros obrigatórios
-	if plataforma == "" || idLoja == "" {
+	// Valida parâmetro obrigatório
+	if plataforma == "" {
 		return c.JSON(http.StatusBadRequest, models.RespostaErro{
 			Error:    models.ErroRequisicaoInvalida,
-			Mensagem: "Parâmetros plataforma e id_loja são obrigatórios",
+			Mensagem: "Parâmetro plataforma é obrigatório",
+		})
+	}
+
+	// Decodifica o body da requisição
+	var req models.RequisicaoMultiplasLojas
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, models.RespostaErro{
+			Error:    models.ErroRequisicaoInvalida,
+			Mensagem: "Body da requisição inválido: " + err.Error(),
+		})
+	}
+
+	// Valida se há IDs no body
+	if len(req.IdsLojas) == 0 {
+		return c.JSON(http.StatusBadRequest, models.RespostaErro{
+			Error:    models.ErroRequisicaoInvalida,
+			Mensagem: "Campo 'ids_lojas' é obrigatório e deve conter pelo menos um ID",
 		})
 	}
 
 	// Chama o serviço da plataforma
-	response, err := sh.platformService.DeactivateStore(plataforma, idLoja)
+	response, err := sh.platformService.DeactivateMultipleStores(string(plataforma), req.IdsLojas)
 	if err != nil {
 		return sh.handlePlatformError(c, err)
 	}

@@ -32,33 +32,6 @@ components:
       description: Token de autorização no formato Bearer
 
   schemas:
-    RespostaOperacaoLoja:
-      type: object
-      properties:
-        plataforma:
-          type: string
-          enum: [anotaai, deliveryvip]
-          description: Identificador da plataforma
-          example: anotaai
-        id_loja:
-          type: string
-          description: Identificador da loja na plataforma
-          example: "68ae03ea4f39ca0019098cd3"
-        status:
-          type: string
-          enum: [ativo, inativo]
-          description: Status atual da loja
-          example: ativo
-        mensagem:
-          type: string
-          description: Mensagem de sucesso da operação
-          example: "Loja ativada com sucesso"
-      required:
-        - plataforma
-        - id_loja
-        - status
-        - mensagem
-
     RespostaStatusMultiplasLojas:
       type: object
       properties:
@@ -126,6 +99,78 @@ components:
       required:
         - status
 
+    RequisicaoMultiplasLojas:
+      type: object
+      properties:
+        ids_lojas:
+          type: array
+          items:
+            type: string
+          description: Lista de IDs das lojas para operação
+          example: ["68ae03ea4f39ca0019098cd3", "678fab971459fe0019a59c8c"]
+          minItems: 1
+      required:
+        - ids_lojas
+
+    RespostaOperacaoMultiplasLojas:
+      type: object
+      properties:
+        plataforma:
+          type: string
+          enum: [anotaai, deliveryvip]
+          description: Identificador da plataforma
+          example: anotaai
+        resultados:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultadoOperacaoLoja'
+          description: Lista com o resultado de cada operação
+      required:
+        - plataforma
+        - resultados
+
+    ResultadoOperacaoLoja:
+      type: object
+      properties:
+        id_loja:
+          type: string
+          description: Identificador da loja na plataforma
+          example: "68ae03ea4f39ca0019098cd3"
+        status:
+          type: string
+          enum: [ativo, inativo, nao_encontrado]
+          description: Status resultante da operação
+          example: ativo
+        sucesso:
+          type: boolean
+          description: Indica se a operação foi executada com sucesso
+          example: true
+        mensagem:
+          type: string
+          description: Mensagem descritiva do resultado
+          example: "Loja ativada com sucesso"
+        erro:
+          type: string
+          enum: 
+            - invalid_request
+            - unauthorized
+            - not_found
+            - bad_gateway
+            - internal_server_error
+          description: |
+            Tipo do erro (presente apenas quando sucesso=false):
+            - `invalid_request`: Dados inválidos para a operação (ex: loja em estado que não permite a operação)
+            - `unauthorized`: Erro de autenticação com a plataforma
+            - `not_found`: Loja não encontrada na plataforma
+            - `bad_gateway`: Erro de comunicação com a plataforma (timeout, conexão)
+            - `internal_server_error`: Erro interno do servidor
+          example: invalid_request
+      required:
+        - id_loja
+        - status
+        - sucesso
+        - mensagem
+
   parameters:
     ParametroPlataforma:
       name: plataforma
@@ -136,15 +181,6 @@ components:
         enum: [anotaai, deliveryvip]
       description: Identificador da plataforma
       example: anotaai
-
-    ParametroIdLoja:
-      name: id_loja
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Identificador da loja na plataforma
-      example: "68ae03ea4f39ca0019098cd3"
 
   responses:
     ErroNaoAutorizado:
@@ -210,28 +246,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/RespostaSaude'
 
-  /plataformas/{plataforma}/lojas/{id_loja}/ativar:
+  /plataformas/{plataforma}/lojas/ativar:
     post:
-      summary: Ativar loja
-      description: Ativa uma loja em uma plataforma específica
-      operationId: ativarLoja
+      summary: Ativar lojas
+      description: Ativa lojas em uma plataforma específica
+      operationId: ativarMultiplasLojas
       tags:
         - Lojas
       parameters:
         - $ref: '#/components/parameters/ParametroPlataforma'
-        - $ref: '#/components/parameters/ParametroIdLoja'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoMultiplasLojas'
+            example:
+              ids_lojas: ["68ae03ea4f39ca0019098cd3", "678fab971459fe0019a59c8c"]
       responses:
         '200':
-          description: Loja ativada com sucesso
+          description: Operação de ativação processada (podem haver falhas individuais)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespostaOperacaoLoja'
+                $ref: '#/components/schemas/RespostaOperacaoMultiplasLojas'
               example:
                 plataforma: anotaai
-                id_loja: "68ae03ea4f39ca0019098cd3"
-                status: ativo
-                mensagem: "Loja ativada com sucesso"
+                resultados:
+                  - id_loja: "68ae03ea4f39ca0019098cd3"
+                    status: ativo
+                    sucesso: true
+                    mensagem: "Loja ativada com sucesso"
+                  - id_loja: "678fab971459fe0019a59c8c"
+                    status: ativo
+                    sucesso: false
+                    mensagem: "Erro ao ativar loja: Loja não encontrada na plataforma"
+                    erro: not_found
         '400':
           $ref: '#/components/responses/ErroRequisicaoInvalida'
         '401':
@@ -241,28 +291,42 @@ paths:
         '502':
           $ref: '#/components/responses/ErroBadGateway'
 
-  /plataformas/{plataforma}/lojas/{id_loja}/desativar:
+  /plataformas/{plataforma}/lojas/desativar:
     post:
-      summary: Desativar loja
-      description: Desativa uma loja em uma plataforma específica
-      operationId: desativarLoja
+      summary: Desativar lojas
+      description: Desativa lojas em uma plataforma específica
+      operationId: desativarMultiplasLojas
       tags:
         - Lojas
       parameters:
         - $ref: '#/components/parameters/ParametroPlataforma'
-        - $ref: '#/components/parameters/ParametroIdLoja'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoMultiplasLojas'
+            example:
+              ids_lojas: ["64d3eebb-b3c3-4d13-9297-bd1735b12c6d", "8b302253-de01-444b-bbd5-8289419c899f"]
       responses:
         '200':
-          description: Loja desativada com sucesso
+          description: Operação de desativação processada (podem haver falhas individuais)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespostaOperacaoLoja'
+                $ref: '#/components/schemas/RespostaOperacaoMultiplasLojas'
               example:
                 plataforma: deliveryvip
-                id_loja: "64d3eebb-b3c3-4d13-9297-bd1735b12c6d"
-                status: inativo
-                mensagem: "Loja desativada com sucesso"
+                resultados:
+                  - id_loja: "64d3eebb-b3c3-4d13-9297-bd1735b12c6d"
+                    status: inativo
+                    sucesso: true
+                    mensagem: "Loja desativada com sucesso"
+                  - id_loja: "8b302253-de01-444b-bbd5-8289419c899f"
+                    status: ativo
+                    sucesso: false
+                    mensagem: "Erro ao desativar loja: Dados inválidos para a operação"
+                    erro: invalid_request
         '400':
           $ref: '#/components/responses/ErroRequisicaoInvalida'
         '401':
@@ -274,9 +338,9 @@ paths:
 
   /plataformas/{plataforma}/lojas/status:
     get:
-      summary: Consultar status de múltiplas lojas
+      summary: Consultar status das lojas
       description: |
-        Consulta o status de múltiplas lojas simultaneamente na plataforma.
+        Consulta o status das lojas na plataforma.
         
         Os IDs das lojas podem ser fornecidos no header "X-Lojas-IDs" separados por vírgula.
         Se o header não for fornecido, retorna o status de todas as lojas da plataforma.

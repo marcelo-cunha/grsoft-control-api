@@ -36,6 +36,26 @@ type RespostaOperacaoLoja struct {
 	Mensagem   string     `json:"mensagem"`
 }
 
+// RequisicaoMultiplasLojas representa a requisição para operações com múltiplas lojas
+type RequisicaoMultiplasLojas struct {
+	IdsLojas []string `json:"ids_lojas" validate:"required,min=1"`
+}
+
+// RespostaOperacaoMultiplasLojas representa a resposta para operações de ativação/desativação de múltiplas lojas
+type RespostaOperacaoMultiplasLojas struct {
+	Plataforma Plataforma              `json:"plataforma"`
+	Resultados []ResultadoOperacaoLoja `json:"resultados"`
+}
+
+// ResultadoOperacaoLoja representa o resultado individual de uma operação
+type ResultadoOperacaoLoja struct {
+	IdLoja   string    `json:"id_loja"`
+	Status   Status    `json:"status"`
+	Sucesso  bool      `json:"sucesso"`
+	Mensagem string    `json:"mensagem"`
+	Erro     *TipoErro `json:"erro,omitempty"`
+}
+
 // RespostaStatusMultiplasLojas representa a resposta para consulta de status de múltiplas lojas
 type RespostaStatusMultiplasLojas struct {
 	Plataforma Plataforma           `json:"plataforma"`

@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strings"
 
 	"delivery-control/internal/config"
 	"delivery-control/internal/models"
@@ -87,6 +88,116 @@ func (ps *PlatformService) DeactivateStore(plataforma models.Plataforma, idLoja 
 	default:
 		return nil, fmt.Errorf("plataforma não implementada: %s", plataforma)
 	}
+}
+
+// ActivateMultipleStores ativa múltiplas lojas em uma plataforma específica
+func (ps *PlatformService) ActivateMultipleStores(plataforma string, idsLojas []string) (*models.RespostaOperacaoMultiplasLojas, error) {
+	finalResponse := &models.RespostaOperacaoMultiplasLojas{
+		Plataforma: models.Plataforma(plataforma),
+		Resultados: make([]models.ResultadoOperacaoLoja, 0, len(idsLojas)),
+	}
+
+	// Processa cada loja individualmente
+	for _, idLoja := range idsLojas {
+		var err error
+
+		switch plataforma {
+		case "anotaai":
+			err = ps.anotaAiService.ActivateStore(idLoja)
+		case "deliveryvip":
+			err = ps.deliveryVipService.ActivateStore(idLoja)
+		default:
+			return nil, fmt.Errorf("plataforma não suportada: %s", plataforma)
+		}
+
+		resultado := models.ResultadoOperacaoLoja{
+			IdLoja: idLoja,
+		}
+
+		if err != nil {
+			// Verifica se é um erro específico do DeliveryVip
+			if deliveryVipErr, ok := err.(*DeliveryVipError); ok {
+				resultado.Status = models.StatusAtivo // mantém status anterior em caso de erro
+				resultado.Sucesso = false
+				resultado.Mensagem = fmt.Sprintf("Erro ao ativar loja: %s", deliveryVipErr.Mensagem)
+				resultado.Erro = &deliveryVipErr.TipoErro
+			} else if strings.Contains(err.Error(), "loja não encontrada") || strings.Contains(err.Error(), "store not found") {
+				resultado.Status = models.StatusNaoEncontrado
+				resultado.Sucesso = false
+				resultado.Mensagem = "Loja não encontrada na plataforma"
+				errType := models.ErroNaoEncontrado
+				resultado.Erro = &errType
+			} else {
+				resultado.Status = models.StatusAtivo // mantém o status anterior em caso de erro
+				resultado.Sucesso = false
+				resultado.Mensagem = fmt.Sprintf("Erro ao ativar loja: %s", err.Error())
+				errType := models.ErroBadGateway
+				resultado.Erro = &errType
+			}
+		} else {
+			resultado.Status = models.StatusAtivo
+			resultado.Sucesso = true
+			resultado.Mensagem = "Loja ativada com sucesso"
+		}
+
+		finalResponse.Resultados = append(finalResponse.Resultados, resultado)
+	}
+
+	return finalResponse, nil
+} // DeactivateMultipleStores desativa múltiplas lojas em uma plataforma específica
+func (ps *PlatformService) DeactivateMultipleStores(plataforma string, idsLojas []string) (*models.RespostaOperacaoMultiplasLojas, error) {
+	finalResponse := &models.RespostaOperacaoMultiplasLojas{
+		Plataforma: models.Plataforma(plataforma),
+		Resultados: make([]models.ResultadoOperacaoLoja, 0, len(idsLojas)),
+	}
+
+	// Processa cada loja individualmente
+	for _, idLoja := range idsLojas {
+		var err error
+
+		switch plataforma {
+		case "anotaai":
+			err = ps.anotaAiService.DeactivateStore(idLoja)
+		case "deliveryvip":
+			err = ps.deliveryVipService.DeactivateStore(idLoja)
+		default:
+			return nil, fmt.Errorf("plataforma não suportada: %s", plataforma)
+		}
+
+		resultado := models.ResultadoOperacaoLoja{
+			IdLoja: idLoja,
+		}
+
+		if err != nil {
+			// Verifica se é um erro específico do DeliveryVip
+			if deliveryVipErr, ok := err.(*DeliveryVipError); ok {
+				resultado.Status = models.StatusAtivo // mantém status anterior em caso de erro
+				resultado.Sucesso = false
+				resultado.Mensagem = fmt.Sprintf("Erro ao desativar loja: %s", deliveryVipErr.Mensagem)
+				resultado.Erro = &deliveryVipErr.TipoErro
+			} else if strings.Contains(err.Error(), "loja não encontrada") || strings.Contains(err.Error(), "store not found") {
+				resultado.Status = models.StatusNaoEncontrado
+				resultado.Sucesso = false
+				resultado.Mensagem = "Loja não encontrada na plataforma"
+				errType := models.ErroNaoEncontrado
+				resultado.Erro = &errType
+			} else {
+				resultado.Status = models.StatusAtivo // mantém o status anterior em caso de erro
+				resultado.Sucesso = false
+				resultado.Mensagem = fmt.Sprintf("Erro ao desativar loja: %s", err.Error())
+				errType := models.ErroBadGateway
+				resultado.Erro = &errType
+			}
+		} else {
+			resultado.Status = models.StatusInativo
+			resultado.Sucesso = true
+			resultado.Mensagem = "Loja desativada com sucesso"
+		}
+
+		finalResponse.Resultados = append(finalResponse.Resultados, resultado)
+	}
+
+	return finalResponse, nil
 }
 
 // GetMultipleStoreStatus obtém o status de múltiplas lojas na plataforma especificada
