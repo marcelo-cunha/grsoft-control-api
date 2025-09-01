@@ -106,7 +106,8 @@ func (sh *StoreHandler) Deactivate(c echo.Context) error {
 }
 
 // GetMultipleStatus gerencia GET /plataformas/{plataforma}/lojas/status
-// Os IDs das lojas devem ser passados no header "X-Lojas-IDs" separados por vírgula
+// Os IDs das lojas podem ser passados no header "X-Lojas-IDs" separados por vírgula
+// Se não informar o header, retorna o status de todas as lojas da plataforma
 func (sh *StoreHandler) GetMultipleStatus(c echo.Context) error {
 	plataforma := models.Plataforma(c.Param("plataforma"))
 	idsParam := c.Request().Header.Get("X-Lojas-IDs")
@@ -119,28 +120,25 @@ func (sh *StoreHandler) GetMultipleStatus(c echo.Context) error {
 		})
 	}
 
-	if idsParam == "" {
-		return c.JSON(http.StatusBadRequest, models.RespostaErro{
-			Error:    models.ErroRequisicaoInvalida,
-			Mensagem: "Header 'X-Lojas-IDs' é obrigatório. Use X-Lojas-IDs: id1,id2,id3",
-		})
-	}
+	// Processa os IDs se fornecidos
+	var idsLojas []string
+	if idsParam != "" {
+		// Separa os IDs por vírgula e remove espaços em branco
+		for _, id := range strings.Split(idsParam, ",") {
+			id = strings.TrimSpace(id)
+			if id != "" {
+				idsLojas = append(idsLojas, id)
+			}
+		}
 
-	// Separa os IDs por vírgula e remove espaços em branco
-	idsLojas := make([]string, 0)
-	for _, id := range strings.Split(idsParam, ",") {
-		id = strings.TrimSpace(id)
-		if id != "" {
-			idsLojas = append(idsLojas, id)
+		if len(idsLojas) == 0 {
+			return c.JSON(http.StatusBadRequest, models.RespostaErro{
+				Error:    models.ErroRequisicaoInvalida,
+				Mensagem: "IDs inválidos no header X-Lojas-IDs",
+			})
 		}
 	}
-
-	if len(idsLojas) == 0 {
-		return c.JSON(http.StatusBadRequest, models.RespostaErro{
-			Error:    models.ErroRequisicaoInvalida,
-			Mensagem: "Pelo menos um ID de loja deve ser fornecido",
-		})
-	}
+	// Se idsParam estiver vazio, idsLojas será nil e o service retornará todas as lojas
 
 	// Chama o serviço da plataforma
 	response, err := sh.platformService.GetMultipleStoreStatus(plataforma, idsLojas)

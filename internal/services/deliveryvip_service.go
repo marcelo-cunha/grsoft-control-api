@@ -264,6 +264,7 @@ type StoreStatusResult struct {
 }
 
 // GetMultipleStoreStatus consulta o status de múltiplas lojas no DeliveryVip
+// Se merchantIDs for nil ou vazio, retorna o status de todas as lojas
 func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[string]StoreStatusResult, error) {
 	token := s.getAccessToken()
 	if token == "" {
@@ -281,7 +282,11 @@ func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[s
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "*/*")
 
-	log.Printf("[DeliveryVip] Consultando todas as lojas para filtrar %d IDs solicitados", len(merchantIDs))
+	if len(merchantIDs) == 0 {
+		log.Printf("[DeliveryVip] Consultando todas as lojas da plataforma")
+	} else {
+		log.Printf("[DeliveryVip] Consultando todas as lojas para filtrar %d IDs solicitados", len(merchantIDs))
+	}
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
@@ -303,6 +308,22 @@ func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[s
 		return nil, fmt.Errorf("erro ao decodificar resposta de merchants: %w", err)
 	}
 
+	statusMap := make(map[string]StoreStatusResult)
+
+	// Se nenhum ID específico foi solicitado, retorna todas as lojas
+	if len(merchantIDs) == 0 {
+		for _, merchant := range merchants {
+			// Status ativo = subscription.status == "ACTIVATED" && !subscription.blocked
+			isActive := merchant.Subscription.Status == "ACTIVATED" && !merchant.Subscription.Blocked
+			statusMap[merchant.ID] = StoreStatusResult{
+				Found:    true,
+				IsActive: isActive,
+			}
+		}
+		log.Printf("[DeliveryVip] Status consultado: %d lojas encontradas", len(statusMap))
+		return statusMap, nil
+	}
+
 	// Cria um set dos IDs solicitados para busca rápida
 	requestedIDs := make(map[string]bool)
 	for _, id := range merchantIDs {
@@ -310,8 +331,6 @@ func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[s
 	}
 
 	// Filtra apenas as lojas solicitadas e constrói mapa de status
-	statusMap := make(map[string]StoreStatusResult)
-
 	for _, merchant := range merchants {
 		// Só processa se o ID foi solicitado
 		if requestedIDs[merchant.ID] {

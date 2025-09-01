@@ -90,6 +90,7 @@ func (ps *PlatformService) DeactivateStore(plataforma models.Plataforma, idLoja 
 }
 
 // GetMultipleStoreStatus obtém o status de múltiplas lojas na plataforma especificada
+// Se idsLojas for nil ou vazio, retorna o status de todas as lojas da plataforma
 func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, idsLojas []string) (*models.RespostaStatusMultiplasLojas, error) {
 	// Valida a plataforma
 	if !ps.isValidPlatform(plataforma) {
@@ -104,18 +105,35 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 			return nil, fmt.Errorf("erro ao consultar status no AnotaAI: %w", err)
 		}
 
-		// Converte o mapa para a estrutura de resposta
-		lojas := make([]models.StatusLojaDetalhes, 0, len(idsLojas))
-		for _, idLoja := range idsLojas {
-			status := models.StatusInativo
-			if isActive, exists := statusMap[idLoja]; exists && isActive {
-				status = models.StatusAtivo
-			}
+		// Se IDs específicos foram solicitados, itera sobre eles
+		// Caso contrário, itera sobre todas as chaves do mapa
+		var lojas []models.StatusLojaDetalhes
+		if len(idsLojas) > 0 {
+			lojas = make([]models.StatusLojaDetalhes, 0, len(idsLojas))
+			for _, idLoja := range idsLojas {
+				status := models.StatusInativo
+				if isActive, exists := statusMap[idLoja]; exists && isActive {
+					status = models.StatusAtivo
+				}
 
-			lojas = append(lojas, models.StatusLojaDetalhes{
-				IdLoja: idLoja,
-				Status: status,
-			})
+				lojas = append(lojas, models.StatusLojaDetalhes{
+					IdLoja: idLoja,
+					Status: status,
+				})
+			}
+		} else {
+			lojas = make([]models.StatusLojaDetalhes, 0, len(statusMap))
+			for idLoja, isActive := range statusMap {
+				status := models.StatusInativo
+				if isActive {
+					status = models.StatusAtivo
+				}
+
+				lojas = append(lojas, models.StatusLojaDetalhes{
+					IdLoja: idLoja,
+					Status: status,
+				})
+			}
 		}
 
 		return &models.RespostaStatusMultiplasLojas{
@@ -128,11 +146,35 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 			return nil, fmt.Errorf("erro ao consultar status das lojas no DeliveryVip: %w", err)
 		}
 
-		// Converte o mapa para a estrutura de resposta
-		lojas := make([]models.StatusLojaDetalhes, 0, len(idsLojas))
-		for _, idLoja := range idsLojas {
-			var status models.Status
-			if result, exists := statusMap[idLoja]; exists {
+		// Se IDs específicos foram solicitados, itera sobre eles
+		// Caso contrário, itera sobre todas as chaves do mapa
+		var lojas []models.StatusLojaDetalhes
+		if len(idsLojas) > 0 {
+			lojas = make([]models.StatusLojaDetalhes, 0, len(idsLojas))
+			for _, idLoja := range idsLojas {
+				var status models.Status
+				if result, exists := statusMap[idLoja]; exists {
+					if !result.Found {
+						status = models.StatusNaoEncontrado
+					} else if result.IsActive {
+						status = models.StatusAtivo
+					} else {
+						status = models.StatusInativo
+					}
+				} else {
+					// Fallback case (não deveria acontecer)
+					status = models.StatusNaoEncontrado
+				}
+
+				lojas = append(lojas, models.StatusLojaDetalhes{
+					IdLoja: idLoja,
+					Status: status,
+				})
+			}
+		} else {
+			lojas = make([]models.StatusLojaDetalhes, 0, len(statusMap))
+			for idLoja, result := range statusMap {
+				var status models.Status
 				if !result.Found {
 					status = models.StatusNaoEncontrado
 				} else if result.IsActive {
@@ -140,15 +182,12 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 				} else {
 					status = models.StatusInativo
 				}
-			} else {
-				// Fallback case (não deveria acontecer)
-				status = models.StatusNaoEncontrado
-			}
 
-			lojas = append(lojas, models.StatusLojaDetalhes{
-				IdLoja: idLoja,
-				Status: status,
-			})
+				lojas = append(lojas, models.StatusLojaDetalhes{
+					IdLoja: idLoja,
+					Status: status,
+				})
+			}
 		}
 
 		return &models.RespostaStatusMultiplasLojas{

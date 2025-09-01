@@ -257,6 +257,7 @@ func (s *AnotaAiService) DeactivateStore(idLoja string) error {
 }
 
 // GetMultipleStoreStatus obtém o status de múltiplas lojas no AnotaAI
+// Se idsLojas for nil ou vazio, retorna o status de todas as lojas
 func (s *AnotaAiService) GetMultipleStoreStatus(idsLojas []string) (map[string]bool, error) {
 	token := s.getAccessToken()
 	if token == "" {
@@ -290,10 +291,18 @@ func (s *AnotaAiService) GetMultipleStoreStatus(idsLojas []string) (map[string]b
 		return nil, fmt.Errorf("consulta de status falhou - success: false")
 	}
 
-	// Mapa para armazenar o status de cada loja solicitada
+	// Mapa para armazenar o status das lojas
 	statusMap := make(map[string]bool)
 
-	// Inicializa todas as lojas como inativas (caso não sejam encontradas)
+	// Se nenhum ID específico foi solicitado, retorna todas as lojas
+	if len(idsLojas) == 0 {
+		for _, page := range listResp.Info.Docs {
+			statusMap[page.PageID] = page.Page.Establishment.Sign.Active
+		}
+		return statusMap, nil
+	}
+
+	// Inicializa todas as lojas solicitadas como inativas (caso não sejam encontradas)
 	for _, idLoja := range idsLojas {
 		statusMap[idLoja] = false
 	}
