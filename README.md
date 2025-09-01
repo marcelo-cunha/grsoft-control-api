@@ -23,13 +23,14 @@ DELIVERYVIP_CLIENT_SECRET=example
 - **GET** `/health` - Verificação de saúde (sem autenticação)
 
 ### Operações de Loja (requer autenticação)
-- **POST** `/plataformas/{plataforma}/lojas/{id_loja}/ativar` - Ativar loja
-- **POST** `/plataformas/{plataforma}/lojas/{id_loja}/desativar` - Desativar loja  
-- **GET** `/plataformas/{plataforma}/lojas/status?ids=id1,id2,id3` - Consultar status de múltiplas lojas
+- **PATCH** `/plataformas/{plataforma}/lojas/ativar` - Ativar múltiplas lojas
+- **PATCH** `/plataformas/{plataforma}/lojas/desativar` - Desativar múltiplas lojas  
+- **GET** `/plataformas/{plataforma}/lojas/status` - Consultar status de múltiplas lojas (IDs no header X-Lojas-IDs)
 
 ### Parâmetros
 - `plataforma`: `anotaai` ou `deliveryvip`
-- `id_loja`: Identificador da loja na plataforma
+- Para ativar/desativar: IDs das lojas no body da requisição no formato `{"ids_lojas": ["id1", "id2", "id3"]}`
+- Para consultar status: IDs das lojas no header `X-Lojas-IDs` (opcional - se vazio, retorna todas as lojas)
 
 ### Autenticação
 Todas as operações de loja requerem autenticação via Bearer token:

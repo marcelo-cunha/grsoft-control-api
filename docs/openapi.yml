@@ -10,7 +10,7 @@ info:
     
     A API **não mantém banco de dados próprio** – apenas encaminha requisições para as 
     plataformas externas e retorna o resultado.
-  version: 1.0.0
+  version: 1.0.2
   contact:
     name: GRSoft
     email: contato@grsoft.com.br
@@ -247,7 +247,7 @@ paths:
                 $ref: '#/components/schemas/RespostaSaude'
 
   /plataformas/{plataforma}/lojas/ativar:
-    post:
+    patch:
       summary: Ativar lojas
       description: Ativa lojas em uma plataforma específica
       operationId: ativarMultiplasLojas
@@ -292,7 +292,7 @@ paths:
           $ref: '#/components/responses/ErroBadGateway'
 
   /plataformas/{plataforma}/lojas/desativar:
-    post:
+    patch:
       summary: Desativar lojas
       description: Desativa lojas em uma plataforma específica
       operationId: desativarMultiplasLojas

@@ -61,7 +61,7 @@ func (sh *StoreHandler) handlePlatformError(c echo.Context, err error) error {
 	})
 }
 
-// ActivateMultiple gerencia POST /plataformas/{plataforma}/lojas/ativar
+// ActivateMultiple gerencia PATCH /plataformas/{plataforma}/lojas/ativar
 func (sh *StoreHandler) ActivateMultiple(c echo.Context) error {
 	plataforma := models.Plataforma(c.Param("plataforma"))
 
@@ -99,7 +99,7 @@ func (sh *StoreHandler) ActivateMultiple(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-// DeactivateMultiple gerencia POST /plataformas/{plataforma}/lojas/desativar
+// DeactivateMultiple gerencia PATCH /plataformas/{plataforma}/lojas/desativar
 func (sh *StoreHandler) DeactivateMultiple(c echo.Context) error {
 	plataforma := models.Plataforma(c.Param("plataforma"))
 

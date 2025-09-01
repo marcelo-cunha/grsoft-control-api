@@ -31,7 +31,7 @@ func SetupRoutes(e *echo.Echo, cfg *config.Config, healthHandler *handlers.Healt
 	protected.Use(middleware.AuthMiddleware(cfg))
 
 	// Operações de loja
-	protected.POST("/plataformas/:plataforma/lojas/ativar", storeHandler.ActivateMultiple)
-	protected.POST("/plataformas/:plataforma/lojas/desativar", storeHandler.DeactivateMultiple)
+	protected.PATCH("/plataformas/:plataforma/lojas/ativar", storeHandler.ActivateMultiple)
+	protected.PATCH("/plataformas/:plataforma/lojas/desativar", storeHandler.DeactivateMultiple)
 	protected.GET("/plataformas/:plataforma/lojas/status", storeHandler.GetMultipleStatus)
 }
