@@ -278,19 +278,20 @@ paths:
       description: |
         Consulta o status de múltiplas lojas simultaneamente na plataforma.
         
-        Os IDs das lojas devem ser fornecidos como parâmetro de query separados por vírgula.
+        Os IDs das lojas devem ser fornecidos no header "X-Lojas-IDs" separados por vírgula.
         
         **Exemplo de uso:**
         ```
-        GET /plataformas/anotaai/lojas/status?ids=68ae03ea4f39ca0019098cd3,678fab971459fe0019a59c8c
+        GET /plataformas/anotaai/lojas/status
+        X-Lojas-IDs: 68ae03ea4f39ca0019098cd3,678fab971459fe0019a59c8c
         ```
       operationId: obterStatusMultiplasLojas
       tags:
         - Lojas
       parameters:
         - $ref: '#/components/parameters/ParametroPlataforma'
-        - name: ids
-          in: query
+        - name: X-Lojas-IDs
+          in: header
           required: true
           schema:
             type: string

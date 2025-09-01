@@ -105,10 +105,11 @@ func (sh *StoreHandler) Deactivate(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-// GetMultipleStatus gerencia GET /plataformas/{plataforma}/lojas/status?ids=id1,id2,id3
+// GetMultipleStatus gerencia GET /plataformas/{plataforma}/lojas/status
+// Os IDs das lojas devem ser passados no header "X-Lojas-IDs" separados por vírgula
 func (sh *StoreHandler) GetMultipleStatus(c echo.Context) error {
 	plataforma := models.Plataforma(c.Param("plataforma"))
-	idsParam := c.QueryParam("ids")
+	idsParam := c.Request().Header.Get("X-Lojas-IDs")
 
 	// Valida parâmetros obrigatórios
 	if plataforma == "" {
@@ -121,7 +122,7 @@ func (sh *StoreHandler) GetMultipleStatus(c echo.Context) error {
 	if idsParam == "" {
 		return c.JSON(http.StatusBadRequest, models.RespostaErro{
 			Error:    models.ErroRequisicaoInvalida,
-			Mensagem: "Parâmetro 'ids' é obrigatório. Use ?ids=id1,id2,id3",
+			Mensagem: "Header 'X-Lojas-IDs' é obrigatório. Use X-Lojas-IDs: id1,id2,id3",
 		})
 	}
 
