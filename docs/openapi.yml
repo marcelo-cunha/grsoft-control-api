@@ -3,54 +3,14 @@ info:
   title: Control API
   description: |
     API wrapper para ativação e desativação de lojas em plataformas de terceiros.
-    
-    Esta API funciona como **ponte** entre o sistema central e plataformas de terceiros 
-    (ex.: AnotaAi, Delivery VIP). O objetivo é permitir que o sistema principal ative, 
-    desative e consulte o status de lojas sem precisar integrar diretamente com cada              example:
-                plataforma: deliveryvip
-                lojas:
-                  - id_loja: "64d3eebb-b3c3-4d13-9297-bd1735b12c6d"
-                    status: ativo
-                    documento: "12345678000190"
-                    nome_fantasia: "Pizzaria Bella Vista"
-                  - id_loja: "8b302253-de01-444b-bbd5-8289419c899f"
-                    status: em_teste
-                    documento: "98765432000110"
-                    nome_fantasia: "Hamburgueria Central"
-                  - id_loja: "b34de25f-82c6-4206-b9cf-4a8f95c40dea"
-                    status: bloqueado
-                    documento: "11122233000144"
-                    nome_fantasia: "Lanchonete do João"
-                  - id_loja: "f45de25f-82c6-4206-b9cf-4a8f95c40dea"
-                    status: teste_expirado
-                    documento: "55566677000188"
-                    nome_fantasia: "Açaí da Maria"
-                  - id_loja: "a12de25f-82c6-4206-b9cf-4a8f95c40dea"
-                    status: demonstracao
-                    documento: "99988877000166"
-                    nome_fantasia: "Café Central"
-                  - id_loja: "c67de25f-82c6-4206-b9cf-4a8f95c40dea"
-                    status: nao_encontrado
-                    documento: ""
-                    nome_fantasia: ""  
-    A API **não mantém banco de dados próprio** – apenas encaminha requisições para as 
+
+    Esta API funciona como **ponte** entre o sistema central e plataformas de terceiros
+    (ex.: AnotaAi, Delivery VIP). O objetivo é permitir que o sistema principal ative,
+    desative e consulte o status de lojas sem precisar integrar diretamente com cada
+    plataforma externa.
+
+    A API **não mantém banco de dados próprio** – apenas encaminha requisições para as
     plataformas externas e retorna o resultado.
-    
-    ## Status das Lojas por Plataforma
-    
-    ### AnotaAI
-    - `ativo`: Loja ativa na plataforma
-    - `bloqueado`: Loja bloqueada/inativa na plataforma
-    - `nao_encontrado`: Loja não encontrada
-    
-    ### DeliveryVip
-    - `ativo`: Loja com subscription ACTIVATED e não bloqueada
-    - `em_teste`: Loja em período de trial (TRIAL)
-    - `teste_expirado`: Período de trial expirado (TRIAL_EXPIRED)
-    - `cancelado`: Subscription cancelada (CANCELLED)
-    - `bloqueado`: Loja com subscription ACTIVATED mas bloqueada
-    - `demonstracao`: Loja em modo demonstração (DEMO)
-    - `nao_encontrado`: Loja não encontrada
   version: 1.0.3
   contact:
     name: GRSoft
@@ -103,11 +63,11 @@ components:
           description: |
             Status atual da loja:
             - `ativo`: Loja encontrada e ativa na plataforma
-            - `em_teste`: Loja em período de teste/trial (DeliveryVip)
-            - `teste_expirado`: Período de teste expirado (DeliveryVip)
-            - `cancelado`: Loja cancelada (DeliveryVip)
-            - `bloqueado`: Loja bloqueada/suspensa (ambas plataformas)
-            - `demonstracao`: Loja em modo demonstração (DeliveryVip)
+            - `em_teste`: Loja em período de teste
+            - `teste_expirado`: Período de teste teste_expirado
+            - `cancelado`: Loja cancelada
+            - `bloqueado`: Loja bloqueada/suspensa
+            - `demonstracao`: Loja em modo demonstração
             - `nao_encontrado`: Loja não encontrada na plataforma
           example: ativo
         documento:
@@ -396,20 +356,29 @@ paths:
       summary: Consultar status das lojas
       description: |
         Consulta o status das lojas na plataforma.
-        
+
         Os IDs das lojas podem ser fornecidos no header "X-Lojas-IDs" separados por vírgula.
         Se o header não for fornecido, retorna o status de todas as lojas da plataforma.
-        
+
         **Exemplo de uso com IDs específicos:**
         ```
         GET /plataformas/anotaai/lojas/status
         X-Lojas-IDs: 68ae03ea4f39ca0019098cd3,678fab971459fe0019a59c8c
         ```
-        
+
         **Exemplo de uso para todas as lojas:**
         ```
         GET /plataformas/anotaai/lojas/status
         ```
+
+        ## Status possíveis
+        - `ativo`: Loja ativa na plataforma
+        - `em_teste`: Loja em período de teste
+        - `teste_expirado`: Período de teste expirado
+        - `cancelado`: Loja cancelada
+        - `bloqueado`: Loja bloqueada na plataforma
+        - `demonstracao`: Loja em modo demonstração
+        - `nao_encontrado`: Loja não encontrada
       operationId: obterStatusMultiplasLojas
       tags:
         - Lojas
