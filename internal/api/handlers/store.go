@@ -61,8 +61,8 @@ func (sh *StoreHandler) handlePlatformError(c echo.Context, err error) error {
 	})
 }
 
-// ActivateMultiple gerencia PATCH /plataformas/{plataforma}/lojas/ativar
-func (sh *StoreHandler) ActivateMultiple(c echo.Context) error {
+// handleBulkOperation gerencia operações em lote (ativar/desativar) com validação comum
+func (sh *StoreHandler) handleBulkOperation(c echo.Context, operation func(string, []string) (*models.RespostaOperacaoMultiplasLojas, error)) error {
 	plataforma := models.Plataforma(c.Param("plataforma"))
 
 	// Valida parâmetro obrigatório
@@ -90,8 +90,8 @@ func (sh *StoreHandler) ActivateMultiple(c echo.Context) error {
 		})
 	}
 
-	// Chama o serviço da plataforma
-	response, err := sh.platformService.ActivateMultipleStores(string(plataforma), req.IdsLojas)
+	// Executa a operação específica
+	response, err := operation(string(plataforma), req.IdsLojas)
 	if err != nil {
 		return sh.handlePlatformError(c, err)
 	}
@@ -99,42 +99,14 @@ func (sh *StoreHandler) ActivateMultiple(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+// ActivateMultiple gerencia PATCH /plataformas/{plataforma}/lojas/ativar
+func (sh *StoreHandler) ActivateMultiple(c echo.Context) error {
+	return sh.handleBulkOperation(c, sh.platformService.ActivateMultipleStores)
+}
+
 // DeactivateMultiple gerencia PATCH /plataformas/{plataforma}/lojas/desativar
 func (sh *StoreHandler) DeactivateMultiple(c echo.Context) error {
-	plataforma := models.Plataforma(c.Param("plataforma"))
-
-	// Valida parâmetro obrigatório
-	if plataforma == "" {
-		return c.JSON(http.StatusBadRequest, models.RespostaErro{
-			Error:    models.ErroRequisicaoInvalida,
-			Mensagem: "Parâmetro plataforma é obrigatório",
-		})
-	}
-
-	// Decodifica o body da requisição
-	var req models.RequisicaoMultiplasLojas
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, models.RespostaErro{
-			Error:    models.ErroRequisicaoInvalida,
-			Mensagem: "Body da requisição inválido: " + err.Error(),
-		})
-	}
-
-	// Valida se há IDs no body
-	if len(req.IdsLojas) == 0 {
-		return c.JSON(http.StatusBadRequest, models.RespostaErro{
-			Error:    models.ErroRequisicaoInvalida,
-			Mensagem: "Campo 'ids_lojas' é obrigatório e deve conter pelo menos um ID",
-		})
-	}
-
-	// Chama o serviço da plataforma
-	response, err := sh.platformService.DeactivateMultipleStores(string(plataforma), req.IdsLojas)
-	if err != nil {
-		return sh.handlePlatformError(c, err)
-	}
-
-	return c.JSON(http.StatusOK, response)
+	return sh.handleBulkOperation(c, sh.platformService.DeactivateMultipleStores)
 }
 
 // GetMultipleStatus gerencia GET /plataformas/{plataforma}/lojas/status

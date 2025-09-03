@@ -72,7 +72,7 @@ func (ps *PlatformService) DeactivateStore(plataforma models.Plataforma, idLoja 
 		return &models.RespostaOperacaoLoja{
 			Plataforma: plataforma,
 			IdLoja:     idLoja,
-			Status:     models.StatusInativo,
+			Status:     models.StatusBloqueado,
 			Mensagem:   "Loja desativada com sucesso",
 		}, nil
 	case models.PlataformaDeliveryVip:
@@ -82,7 +82,7 @@ func (ps *PlatformService) DeactivateStore(plataforma models.Plataforma, idLoja 
 		return &models.RespostaOperacaoLoja{
 			Plataforma: plataforma,
 			IdLoja:     idLoja,
-			Status:     models.StatusInativo,
+			Status:     models.StatusBloqueado,
 			Mensagem:   "Loja desativada com sucesso",
 		}, nil
 	default:
@@ -117,7 +117,12 @@ func (ps *PlatformService) ActivateMultipleStores(plataforma string, idsLojas []
 		if err != nil {
 			// Verifica se é um erro específico do DeliveryVip
 			if deliveryVipErr, ok := err.(*DeliveryVipError); ok {
-				resultado.Status = models.StatusAtivo // mantém status anterior em caso de erro
+				switch deliveryVipErr.TipoErro {
+				case models.ErroNaoEncontrado:
+					resultado.Status = models.StatusNaoEncontrado
+				default:
+					resultado.Status = models.StatusNaoEncontrado
+				}
 				resultado.Sucesso = false
 				resultado.Mensagem = fmt.Sprintf("Erro ao ativar loja: %s", deliveryVipErr.Mensagem)
 				resultado.Erro = &deliveryVipErr.TipoErro
@@ -128,7 +133,7 @@ func (ps *PlatformService) ActivateMultipleStores(plataforma string, idsLojas []
 				errType := models.ErroNaoEncontrado
 				resultado.Erro = &errType
 			} else {
-				resultado.Status = models.StatusAtivo // mantém o status anterior em caso de erro
+				resultado.Status = models.StatusNaoEncontrado
 				resultado.Sucesso = false
 				resultado.Mensagem = fmt.Sprintf("Erro ao ativar loja: %s", err.Error())
 				errType := models.ErroBadGateway
@@ -171,7 +176,12 @@ func (ps *PlatformService) DeactivateMultipleStores(plataforma string, idsLojas 
 		if err != nil {
 			// Verifica se é um erro específico do DeliveryVip
 			if deliveryVipErr, ok := err.(*DeliveryVipError); ok {
-				resultado.Status = models.StatusAtivo // mantém status anterior em caso de erro
+				switch deliveryVipErr.TipoErro {
+				case models.ErroNaoEncontrado:
+					resultado.Status = models.StatusNaoEncontrado
+				default:
+					resultado.Status = models.StatusNaoEncontrado
+				}
 				resultado.Sucesso = false
 				resultado.Mensagem = fmt.Sprintf("Erro ao desativar loja: %s", deliveryVipErr.Mensagem)
 				resultado.Erro = &deliveryVipErr.TipoErro
@@ -182,14 +192,14 @@ func (ps *PlatformService) DeactivateMultipleStores(plataforma string, idsLojas 
 				errType := models.ErroNaoEncontrado
 				resultado.Erro = &errType
 			} else {
-				resultado.Status = models.StatusAtivo // mantém o status anterior em caso de erro
+				resultado.Status = models.StatusNaoEncontrado
 				resultado.Sucesso = false
 				resultado.Mensagem = fmt.Sprintf("Erro ao desativar loja: %s", err.Error())
 				errType := models.ErroBadGateway
 				resultado.Erro = &errType
 			}
 		} else {
-			resultado.Status = models.StatusInativo
+			resultado.Status = models.StatusBloqueado
 			resultado.Sucesso = true
 			resultado.Mensagem = "Loja desativada com sucesso"
 		}
@@ -228,10 +238,9 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 				if storeInfo, exists := statusMap[idLoja]; exists {
 					if !storeInfo.Found {
 						status = models.StatusNaoEncontrado
-					} else if storeInfo.IsActive {
-						status = models.StatusAtivo
 					} else {
-						status = models.StatusInativo
+						// Usa o status específico retornado pelo serviço
+						status = storeInfo.Status
 					}
 					documento = storeInfo.Documento
 					nomeFantasia = storeInfo.NomeFantasia
@@ -252,10 +261,9 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 				var status models.Status
 				if !storeInfo.Found {
 					status = models.StatusNaoEncontrado
-				} else if storeInfo.IsActive {
-					status = models.StatusAtivo
 				} else {
-					status = models.StatusInativo
+					// Usa o status específico retornado pelo serviço
+					status = storeInfo.Status
 				}
 
 				lojas = append(lojas, models.StatusLojaDetalhes{
@@ -289,10 +297,9 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 				if storeInfo, exists := statusMap[idLoja]; exists {
 					if !storeInfo.Found {
 						status = models.StatusNaoEncontrado
-					} else if storeInfo.IsActive {
-						status = models.StatusAtivo
 					} else {
-						status = models.StatusInativo
+						// Usa o status específico retornado pelo serviço
+						status = storeInfo.Status
 					}
 					documento = storeInfo.Documento
 					nomeFantasia = storeInfo.NomeFantasia
@@ -314,10 +321,8 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 				var status models.Status
 				if !storeInfo.Found {
 					status = models.StatusNaoEncontrado
-				} else if storeInfo.IsActive {
-					status = models.StatusAtivo
 				} else {
-					status = models.StatusInativo
+					status = storeInfo.Status
 				}
 
 				lojas = append(lojas, models.StatusLojaDetalhes{

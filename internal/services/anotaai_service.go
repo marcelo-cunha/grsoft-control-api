@@ -340,9 +340,18 @@ func (s *AnotaAiService) GetMultipleStoreStatus(idsLojas []string) (map[string]m
 	// Se nenhum ID específico foi solicitado, retorna todas as lojas
 	if len(idsLojas) == 0 {
 		for _, page := range listResp.Info.Docs {
+			// No AnotaAI só existe ativo e bloqueado
+			var status models.Status
+			if page.Page.Establishment.Sign.Active {
+				status = models.StatusAtivo
+			} else {
+				status = models.StatusBloqueado
+			}
+
 			storeMap[page.PageID] = models.StoreInfo{
 				Found:        true,
 				IsActive:     page.Page.Establishment.Sign.Active,
+				Status:       status,
 				Documento:    utils.CleanDocument(page.Page.Establishment.Sign.CpfCnpj.GetValue()),
 				NomeFantasia: page.PageName,
 			}
@@ -355,6 +364,7 @@ func (s *AnotaAiService) GetMultipleStoreStatus(idsLojas []string) (map[string]m
 		storeMap[idLoja] = models.StoreInfo{
 			Found:        false,
 			IsActive:     false,
+			Status:       models.StatusNaoEncontrado,
 			Documento:    "",
 			NomeFantasia: "",
 		}
@@ -364,9 +374,18 @@ func (s *AnotaAiService) GetMultipleStoreStatus(idsLojas []string) (map[string]m
 	for _, idLoja := range idsLojas {
 		for _, page := range listResp.Info.Docs {
 			if page.PageID == idLoja {
+				// No AnotaAI só existe ativo e bloqueado
+				var status models.Status
+				if page.Page.Establishment.Sign.Active {
+					status = models.StatusAtivo
+				} else {
+					status = models.StatusBloqueado
+				}
+
 				storeMap[idLoja] = models.StoreInfo{
 					Found:        true,
 					IsActive:     page.Page.Establishment.Sign.Active,
+					Status:       status,
 					Documento:    utils.CleanDocument(page.Page.Establishment.Sign.CpfCnpj.GetValue()),
 					NomeFantasia: page.PageName,
 				}

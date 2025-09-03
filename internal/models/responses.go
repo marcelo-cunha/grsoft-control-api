@@ -13,7 +13,11 @@ type Status string
 
 const (
 	StatusAtivo         Status = "ativo"
-	StatusInativo       Status = "inativo"
+	StatusEmTeste       Status = "em_teste"
+	StatusTesteExpirado Status = "teste_expirado"
+	StatusCancelado     Status = "cancelado"
+	StatusBloqueado     Status = "bloqueado"
+	StatusDemonstracao  Status = "demonstracao"
 	StatusNaoEncontrado Status = "nao_encontrado"
 )
 
@@ -74,6 +78,7 @@ type StatusLojaDetalhes struct {
 type StoreInfo struct {
 	Found        bool
 	IsActive     bool
+	Status       Status // Novo campo para armazenar o status específico
 	Documento    string
 	NomeFantasia string
 }

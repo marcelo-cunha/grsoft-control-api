@@ -104,10 +104,37 @@ func NewDeliveryVipService(cfg *config.Config) *DeliveryVipService {
 		},
 	}
 
-	// Inicia a rotina de renovação de token
+	// Tenta fazer login automaticamente
+	if err := service.renewToken(); err != nil {
+		log.Printf("[DeliveryVip] Erro ao fazer login inicial: %v", err)
+	}
+
+	// Inicia a rotina de renovação automática de token
 	go service.startTokenRenewal()
 
 	return service
+}
+
+// mapSubscriptionToStatus mapeia o status e blocked da subscription para os status do modelo
+func (s *DeliveryVipService) mapSubscriptionToStatus(subscriptionStatus string, blocked bool) models.Status {
+	switch subscriptionStatus {
+	case "TRIAL":
+		return models.StatusEmTeste
+	case "TRIAL_EXPIRED":
+		return models.StatusTesteExpirado
+	case "CANCELLED":
+		return models.StatusCancelado
+	case "DEMO":
+		return models.StatusDemonstracao
+	case "ACTIVATED":
+		if blocked {
+			return models.StatusBloqueado
+		}
+		return models.StatusAtivo
+	default:
+		// Para status desconhecidos, retorna bloqueado por segurança
+		return models.StatusBloqueado
+	}
 }
 
 // startTokenRenewal inicia a rotina que renova o token a cada 20 horas (token expira em 24h)
@@ -252,6 +279,7 @@ func (s *DeliveryVipService) DeactivateStore(merchantID string) error {
 
 	if resp.StatusCode != http.StatusAccepted {
 		body, _ := io.ReadAll(resp.Body)
+		log.Printf("[DeliveryVip] Erro ao bloquear loja %s - Status: %d, Body: %s", merchantID, resp.StatusCode, string(body))
 		return NewDeliveryVipError(resp.StatusCode, string(body))
 	}
 
@@ -315,11 +343,14 @@ func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[s
 	// Se nenhum ID específico foi solicitado, retorna todas as lojas
 	if len(merchantIDs) == 0 {
 		for _, merchant := range merchants {
-			// Status ativo = subscription.status == "ACTIVATED" && !subscription.blocked
-			isActive := merchant.Subscription.Status == "ACTIVATED" && !merchant.Subscription.Blocked
+			// Usa o novo mapeamento de status
+			status := s.mapSubscriptionToStatus(merchant.Subscription.Status, merchant.Subscription.Blocked)
+			// Considera ativo apenas se o status for realmente ativo
+			isActive := status == models.StatusAtivo
 			storeMap[merchant.ID] = models.StoreInfo{
 				Found:        true,
 				IsActive:     isActive,
+				Status:       status,
 				Documento:    utils.CleanDocument(merchant.Identifier),
 				NomeFantasia: merchant.Name,
 			}
@@ -338,11 +369,14 @@ func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[s
 	for _, merchant := range merchants {
 		// Só processa se o ID foi solicitado
 		if requestedIDs[merchant.ID] {
-			// Status ativo = subscription.status == "ACTIVATED" && !subscription.blocked
-			isActive := merchant.Subscription.Status == "ACTIVATED" && !merchant.Subscription.Blocked
+			// Usa o novo mapeamento de status
+			status := s.mapSubscriptionToStatus(merchant.Subscription.Status, merchant.Subscription.Blocked)
+			// Considera ativo apenas se o status for realmente ativo
+			isActive := status == models.StatusAtivo
 			storeMap[merchant.ID] = models.StoreInfo{
 				Found:        true,
 				IsActive:     isActive,
+				Status:       status,
 				Documento:    utils.CleanDocument(merchant.Identifier),
 				NomeFantasia: merchant.Name,
 			}
@@ -355,6 +389,7 @@ func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[s
 			storeMap[id] = models.StoreInfo{
 				Found:        false,
 				IsActive:     false,
+				Status:       models.StatusNaoEncontrado,
 				Documento:    "",
 				NomeFantasia: "",
 			}

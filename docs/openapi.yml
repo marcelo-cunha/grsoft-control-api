@@ -6,11 +6,52 @@ info:
     
     Esta API funciona como **ponte** entre o sistema central e plataformas de terceiros 
     (ex.: AnotaAi, Delivery VIP). O objetivo é permitir que o sistema principal ative, 
-    desative e consulte o status de lojas sem precisar integrar diretamente com cada plataforma.
-    
+    desative e consulte o status de lojas sem precisar integrar diretamente com cada              example:
+                plataforma: deliveryvip
+                lojas:
+                  - id_loja: "64d3eebb-b3c3-4d13-9297-bd1735b12c6d"
+                    status: ativo
+                    documento: "12345678000190"
+                    nome_fantasia: "Pizzaria Bella Vista"
+                  - id_loja: "8b302253-de01-444b-bbd5-8289419c899f"
+                    status: em_teste
+                    documento: "98765432000110"
+                    nome_fantasia: "Hamburgueria Central"
+                  - id_loja: "b34de25f-82c6-4206-b9cf-4a8f95c40dea"
+                    status: bloqueado
+                    documento: "11122233000144"
+                    nome_fantasia: "Lanchonete do João"
+                  - id_loja: "f45de25f-82c6-4206-b9cf-4a8f95c40dea"
+                    status: teste_expirado
+                    documento: "55566677000188"
+                    nome_fantasia: "Açaí da Maria"
+                  - id_loja: "a12de25f-82c6-4206-b9cf-4a8f95c40dea"
+                    status: demonstracao
+                    documento: "99988877000166"
+                    nome_fantasia: "Café Central"
+                  - id_loja: "c67de25f-82c6-4206-b9cf-4a8f95c40dea"
+                    status: nao_encontrado
+                    documento: ""
+                    nome_fantasia: ""  
     A API **não mantém banco de dados próprio** – apenas encaminha requisições para as 
     plataformas externas e retorna o resultado.
-  version: 1.0.2
+    
+    ## Status das Lojas por Plataforma
+    
+    ### AnotaAI
+    - `ativo`: Loja ativa na plataforma
+    - `bloqueado`: Loja bloqueada/inativa na plataforma
+    - `nao_encontrado`: Loja não encontrada
+    
+    ### DeliveryVip
+    - `ativo`: Loja com subscription ACTIVATED e não bloqueada
+    - `em_teste`: Loja em período de trial (TRIAL)
+    - `teste_expirado`: Período de trial expirado (TRIAL_EXPIRED)
+    - `cancelado`: Subscription cancelada (CANCELLED)
+    - `bloqueado`: Loja com subscription ACTIVATED mas bloqueada
+    - `demonstracao`: Loja em modo demonstração (DEMO)
+    - `nao_encontrado`: Loja não encontrada
+  version: 1.0.3
   contact:
     name: GRSoft
     email: contato@grsoft.com.br
@@ -58,11 +99,15 @@ components:
           example: "678fab971459fe0019a59c8c"
         status:
           type: string
-          enum: [ativo, inativo, nao_encontrado]
+          enum: [ativo, em_teste, teste_expirado, cancelado, bloqueado, demonstracao, nao_encontrado]
           description: |
             Status atual da loja:
             - `ativo`: Loja encontrada e ativa na plataforma
-            - `inativo`: Loja encontrada mas inativa na plataforma
+            - `em_teste`: Loja em período de teste/trial (DeliveryVip)
+            - `teste_expirado`: Período de teste expirado (DeliveryVip)
+            - `cancelado`: Loja cancelada (DeliveryVip)
+            - `bloqueado`: Loja bloqueada/suspensa (ambas plataformas)
+            - `demonstracao`: Loja em modo demonstração (DeliveryVip)
             - `nao_encontrado`: Loja não encontrada na plataforma
           example: ativo
         documento:
@@ -148,7 +193,7 @@ components:
           example: "68ae03ea4f39ca0019098cd3"
         status:
           type: string
-          enum: [ativo, inativo, nao_encontrado]
+          enum: [ativo, bloqueado, nao_encontrado]
           description: Status resultante da operação
           example: ativo
         sucesso:
@@ -329,7 +374,7 @@ paths:
                 plataforma: deliveryvip
                 resultados:
                   - id_loja: "64d3eebb-b3c3-4d13-9297-bd1735b12c6d"
-                    status: inativo
+                    status: bloqueado
                     sucesso: true
                     mensagem: "Loja desativada com sucesso"
                   - id_loja: "8b302253-de01-444b-bbd5-8289419c899f"
@@ -392,10 +437,18 @@ paths:
                     documento: "12345678000190"
                     nome_fantasia: "Pizzaria Bella Vista"
                   - id_loja: "8b302253-de01-444b-bbd5-8289419c899f"
-                    status: inativo
+                    status: em_teste
                     documento: "98765432000110"
                     nome_fantasia: "Hamburgueria Central"
                   - id_loja: "b34de25f-82c6-4206-b9cf-4a8f95c40dea"
+                    status: bloqueado
+                    documento: "11122233000144"
+                    nome_fantasia: "Lanchonete do João"
+                  - id_loja: "f45de25f-82c6-4206-b9cf-4a8f95c40dea"
+                    status: teste_expirado
+                    documento: "55566677000188"
+                    nome_fantasia: "Açaí da Maria"
+                  - id_loja: "c67de25f-82c6-4206-b9cf-4a8f95c40dea"
                     status: nao_encontrado
                     documento: ""
                     nome_fantasia: ""
