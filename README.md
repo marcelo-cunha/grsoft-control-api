@@ -26,6 +26,7 @@ DELIVERYVIP_CLIENT_SECRET=example
 - **PATCH** `/plataformas/{plataforma}/lojas/ativar` - Ativar múltiplas lojas
 - **PATCH** `/plataformas/{plataforma}/lojas/desativar` - Desativar múltiplas lojas  
 - **GET** `/plataformas/{plataforma}/lojas/status` - Consultar status de múltiplas lojas (IDs no header X-Lojas-IDs)
+  - Retorna: id_loja, status, documento (CPF/CNPJ) e nome_fantasia para cada loja
 
 ### Parâmetros
 - `plataforma`: `anotaai` ou `deliveryvip`

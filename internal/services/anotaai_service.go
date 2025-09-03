@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"delivery-control/internal/config"
+	"delivery-control/internal/models"
+	"delivery-control/internal/utils"
 )
 
 // AnotaAiService gerencia a integração com AnotaAI
@@ -49,6 +51,46 @@ type AnotaAiListPagesResponse struct {
 	} `json:"info"`
 }
 
+// CpfCnpjField representa o campo cpf_cnpj que pode ser string ou objeto
+type CpfCnpjField struct {
+	Type  string `json:"type,omitempty"`
+	Value string `json:"value,omitempty"`
+	Raw   string // para armazenar valor quando for string
+}
+
+// UnmarshalJSON implementa unmarshaling customizado para lidar com string ou objeto
+func (c *CpfCnpjField) UnmarshalJSON(data []byte) error {
+	// Primeiro tenta como objeto
+	var obj struct {
+		Type  string `json:"type"`
+		Value string `json:"value"`
+	}
+	if err := json.Unmarshal(data, &obj); err == nil {
+		c.Type = obj.Type
+		c.Value = obj.Value
+		c.Raw = obj.Value
+		return nil
+	}
+
+	// Se falhar, tenta como string
+	var str string
+	if err := json.Unmarshal(data, &str); err == nil {
+		c.Raw = str
+		c.Value = str
+		return nil
+	}
+
+	return fmt.Errorf("cpf_cnpj deve ser string ou objeto")
+}
+
+// GetValue retorna o valor do documento independente do formato
+func (c *CpfCnpjField) GetValue() string {
+	if c.Value != "" {
+		return c.Value
+	}
+	return c.Raw
+}
+
 // AnotaAiPage representa uma página/loja na resposta da API
 type AnotaAiPage struct {
 	ID       string `json:"_id"`
@@ -58,7 +100,8 @@ type AnotaAiPage struct {
 	Page     struct {
 		Establishment struct {
 			Sign struct {
-				Active bool `json:"active"`
+				Active  bool         `json:"active"`
+				CpfCnpj CpfCnpjField `json:"cpf_cnpj"`
 			} `json:"sign"`
 		} `json:"establishment"`
 	} `json:"page"`
@@ -258,7 +301,7 @@ func (s *AnotaAiService) DeactivateStore(idLoja string) error {
 
 // GetMultipleStoreStatus obtém o status de múltiplas lojas no AnotaAI
 // Se idsLojas for nil ou vazio, retorna o status de todas as lojas
-func (s *AnotaAiService) GetMultipleStoreStatus(idsLojas []string) (map[string]bool, error) {
+func (s *AnotaAiService) GetMultipleStoreStatus(idsLojas []string) (map[string]models.StoreInfo, error) {
 	token := s.getAccessToken()
 	if token == "" {
 		return nil, fmt.Errorf("token de acesso não disponível")
@@ -291,32 +334,46 @@ func (s *AnotaAiService) GetMultipleStoreStatus(idsLojas []string) (map[string]b
 		return nil, fmt.Errorf("consulta de status falhou - success: false")
 	}
 
-	// Mapa para armazenar o status das lojas
-	statusMap := make(map[string]bool)
+	// Mapa para armazenar as informações das lojas
+	storeMap := make(map[string]models.StoreInfo)
 
 	// Se nenhum ID específico foi solicitado, retorna todas as lojas
 	if len(idsLojas) == 0 {
 		for _, page := range listResp.Info.Docs {
-			statusMap[page.PageID] = page.Page.Establishment.Sign.Active
+			storeMap[page.PageID] = models.StoreInfo{
+				Found:        true,
+				IsActive:     page.Page.Establishment.Sign.Active,
+				Documento:    utils.CleanDocument(page.Page.Establishment.Sign.CpfCnpj.GetValue()),
+				NomeFantasia: page.PageName,
+			}
 		}
-		return statusMap, nil
+		return storeMap, nil
 	}
 
-	// Inicializa todas as lojas solicitadas como inativas (caso não sejam encontradas)
+	// Inicializa todas as lojas solicitadas como não encontradas
 	for _, idLoja := range idsLojas {
-		statusMap[idLoja] = false
+		storeMap[idLoja] = models.StoreInfo{
+			Found:        false,
+			IsActive:     false,
+			Documento:    "",
+			NomeFantasia: "",
+		}
 	}
 
 	// Procura cada loja solicitada na resposta da API
 	for _, idLoja := range idsLojas {
 		for _, page := range listResp.Info.Docs {
 			if page.PageID == idLoja {
-				// Verifica se a loja está ativa através do campo correto
-				statusMap[idLoja] = page.Page.Establishment.Sign.Active
+				storeMap[idLoja] = models.StoreInfo{
+					Found:        true,
+					IsActive:     page.Page.Establishment.Sign.Active,
+					Documento:    utils.CleanDocument(page.Page.Establishment.Sign.CpfCnpj.GetValue()),
+					NomeFantasia: page.PageName,
+				}
 				break
 			}
 		}
 	}
 
-	return statusMap, nil
+	return storeMap, nil
 }

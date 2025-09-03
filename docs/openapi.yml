@@ -65,9 +65,19 @@ components:
             - `inativo`: Loja encontrada mas inativa na plataforma
             - `nao_encontrado`: Loja não encontrada na plataforma
           example: ativo
+        documento:
+          type: string
+          description: Documento da loja (CPF/CNPJ)
+          example: "12345678000190"
+        nome_fantasia:
+          type: string
+          description: Nome fantasia da loja
+          example: "Pizzaria Bella Vista"
       required:
         - id_loja
         - status
+        - documento
+        - nome_fantasia
 
     RespostaErro:
       type: object
@@ -379,10 +389,16 @@ paths:
                 lojas:
                   - id_loja: "64d3eebb-b3c3-4d13-9297-bd1735b12c6d"
                     status: ativo
+                    documento: "12345678000190"
+                    nome_fantasia: "Pizzaria Bella Vista"
                   - id_loja: "8b302253-de01-444b-bbd5-8289419c899f"
                     status: inativo
+                    documento: "98765432000110"
+                    nome_fantasia: "Hamburgueria Central"
                   - id_loja: "b34de25f-82c6-4206-b9cf-4a8f95c40dea"
                     status: nao_encontrado
+                    documento: ""
+                    nome_fantasia: ""
         '400':
           $ref: '#/components/responses/ErroRequisicaoInvalida'
         '401':

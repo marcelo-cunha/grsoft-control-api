@@ -222,27 +222,47 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 		if len(idsLojas) > 0 {
 			lojas = make([]models.StatusLojaDetalhes, 0, len(idsLojas))
 			for _, idLoja := range idsLojas {
-				status := models.StatusInativo
-				if isActive, exists := statusMap[idLoja]; exists && isActive {
-					status = models.StatusAtivo
+				var status models.Status
+				var documento, nomeFantasia string
+
+				if storeInfo, exists := statusMap[idLoja]; exists {
+					if !storeInfo.Found {
+						status = models.StatusNaoEncontrado
+					} else if storeInfo.IsActive {
+						status = models.StatusAtivo
+					} else {
+						status = models.StatusInativo
+					}
+					documento = storeInfo.Documento
+					nomeFantasia = storeInfo.NomeFantasia
+				} else {
+					status = models.StatusNaoEncontrado
 				}
 
 				lojas = append(lojas, models.StatusLojaDetalhes{
-					IdLoja: idLoja,
-					Status: status,
+					IdLoja:       idLoja,
+					Status:       status,
+					Documento:    documento,
+					NomeFantasia: nomeFantasia,
 				})
 			}
 		} else {
 			lojas = make([]models.StatusLojaDetalhes, 0, len(statusMap))
-			for idLoja, isActive := range statusMap {
-				status := models.StatusInativo
-				if isActive {
+			for idLoja, storeInfo := range statusMap {
+				var status models.Status
+				if !storeInfo.Found {
+					status = models.StatusNaoEncontrado
+				} else if storeInfo.IsActive {
 					status = models.StatusAtivo
+				} else {
+					status = models.StatusInativo
 				}
 
 				lojas = append(lojas, models.StatusLojaDetalhes{
-					IdLoja: idLoja,
-					Status: status,
+					IdLoja:       idLoja,
+					Status:       status,
+					Documento:    storeInfo.Documento,
+					NomeFantasia: storeInfo.NomeFantasia,
 				})
 			}
 		}
@@ -264,39 +284,47 @@ func (ps *PlatformService) GetMultipleStoreStatus(plataforma models.Plataforma, 
 			lojas = make([]models.StatusLojaDetalhes, 0, len(idsLojas))
 			for _, idLoja := range idsLojas {
 				var status models.Status
-				if result, exists := statusMap[idLoja]; exists {
-					if !result.Found {
+				var documento, nomeFantasia string
+
+				if storeInfo, exists := statusMap[idLoja]; exists {
+					if !storeInfo.Found {
 						status = models.StatusNaoEncontrado
-					} else if result.IsActive {
+					} else if storeInfo.IsActive {
 						status = models.StatusAtivo
 					} else {
 						status = models.StatusInativo
 					}
+					documento = storeInfo.Documento
+					nomeFantasia = storeInfo.NomeFantasia
 				} else {
 					// Fallback case (não deveria acontecer)
 					status = models.StatusNaoEncontrado
 				}
 
 				lojas = append(lojas, models.StatusLojaDetalhes{
-					IdLoja: idLoja,
-					Status: status,
+					IdLoja:       idLoja,
+					Status:       status,
+					Documento:    documento,
+					NomeFantasia: nomeFantasia,
 				})
 			}
 		} else {
 			lojas = make([]models.StatusLojaDetalhes, 0, len(statusMap))
-			for idLoja, result := range statusMap {
+			for idLoja, storeInfo := range statusMap {
 				var status models.Status
-				if !result.Found {
+				if !storeInfo.Found {
 					status = models.StatusNaoEncontrado
-				} else if result.IsActive {
+				} else if storeInfo.IsActive {
 					status = models.StatusAtivo
 				} else {
 					status = models.StatusInativo
 				}
 
 				lojas = append(lojas, models.StatusLojaDetalhes{
-					IdLoja: idLoja,
-					Status: status,
+					IdLoja:       idLoja,
+					Status:       status,
+					Documento:    storeInfo.Documento,
+					NomeFantasia: storeInfo.NomeFantasia,
 				})
 			}
 		}

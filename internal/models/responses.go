@@ -64,8 +64,18 @@ type RespostaStatusMultiplasLojas struct {
 
 // StatusLojaDetalhes representa os detalhes de status de uma loja específica
 type StatusLojaDetalhes struct {
-	IdLoja string `json:"id_loja"`
-	Status Status `json:"status"`
+	IdLoja       string `json:"id_loja"`
+	Status       Status `json:"status"`
+	Documento    string `json:"documento"`
+	NomeFantasia string `json:"nome_fantasia"`
+}
+
+// StoreInfo representa informações completas de uma loja
+type StoreInfo struct {
+	Found        bool
+	IsActive     bool
+	Documento    string
+	NomeFantasia string
 }
 
 // RespostaErro representa uma resposta de erro
