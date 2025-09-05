@@ -104,12 +104,8 @@ func NewDeliveryVipService(cfg *config.Config) *DeliveryVipService {
 		},
 	}
 
-	// Tenta fazer login automaticamente
-	if err := service.renewToken(); err != nil {
-		log.Printf("[DeliveryVip] Erro ao fazer login inicial: %v", err)
-	}
-
 	// Inicia a rotina de renovação automática de token
+	// A primeira autenticação será feita dentro da goroutine
 	go service.startTokenRenewal()
 
 	return service
@@ -137,30 +133,37 @@ func (s *DeliveryVipService) mapSubscriptionToStatus(subscriptionStatus string, 
 	}
 }
 
-// startTokenRenewal inicia a rotina que renova o token a cada 20 horas (token expira em 24h)
+// startTokenRenewal inicia a rotina que renova o token a cada 6 horas (token expira em 24h)
 func (s *DeliveryVipService) startTokenRenewal() {
 	log.Printf("[DeliveryVip] Iniciando serviço de renovação de token...")
 	log.Printf("[DeliveryVip] URL configurada: %s", s.config.Platforms.DeliveryVipURL)
 
 	// Faz o primeiro login imediatamente
-	log.Printf("[DeliveryVip] Tentando autenticação inicial...")
+	log.Printf("[DeliveryVip] [%s] Tentando autenticação inicial...", time.Now().Format("2006-01-02 15:04:05"))
 	if err := s.renewToken(); err != nil {
-		log.Printf("[DeliveryVip] ERRO na autenticação inicial: %v", err)
+		log.Printf("[DeliveryVip] [%s] ERRO na autenticação inicial: %v", time.Now().Format("2006-01-02 15:04:05"), err)
 	} else {
-		log.Printf("[DeliveryVip] Autenticação inicial realizada com sucesso!")
+		log.Printf("[DeliveryVip] [%s] Autenticação inicial realizada com sucesso!", time.Now().Format("2006-01-02 15:04:05"))
 	}
 
-	// Configura renovação a cada 20 horas (token expira em 24h)
-	ticker := time.NewTicker(20 * time.Hour)
+	// Configura renovação a cada 6 horas (margem de segurança maior)
+	renewalInterval := 6 * time.Hour
+	ticker := time.NewTicker(renewalInterval)
 	defer ticker.Stop()
 
+	nextRenewal := time.Now().Add(renewalInterval)
+	log.Printf("[DeliveryVip] [%s] Próxima renovação agendada para: %s", time.Now().Format("2006-01-02 15:04:05"), nextRenewal.Format("2006-01-02 15:04:05"))
+
 	for range ticker.C {
-		log.Printf("[DeliveryVip] Renovando token automaticamente...")
+		log.Printf("[DeliveryVip] [%s] Iniciando renovação automática de token...", time.Now().Format("2006-01-02 15:04:05"))
 		if err := s.renewToken(); err != nil {
-			log.Printf("[DeliveryVip] ERRO na renovação automática: %v", err)
+			log.Printf("[DeliveryVip] [%s] ERRO na renovação automática: %v", time.Now().Format("2006-01-02 15:04:05"), err)
 		} else {
-			log.Printf("[DeliveryVip] Token renovado com sucesso!")
+			log.Printf("[DeliveryVip] [%s] Token renovado com sucesso!", time.Now().Format("2006-01-02 15:04:05"))
 		}
+
+		nextRenewal = time.Now().Add(renewalInterval)
+		log.Printf("[DeliveryVip] [%s] Próxima renovação agendada para: %s", time.Now().Format("2006-01-02 15:04:05"), nextRenewal.Format("2006-01-02 15:04:05"))
 	}
 }
 
@@ -207,7 +210,11 @@ func (s *DeliveryVipService) renewToken() error {
 	s.accessToken = tokenResp.AccessToken
 	s.tokenMutex.Unlock()
 
-	log.Printf("[DeliveryVip] Token obtido com sucesso! Expira em: %d segundos", tokenResp.ExpiresIn)
+	expiresAt := time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	log.Printf("[DeliveryVip] [%s] Token obtido com sucesso! Expira em: %d segundos (%s)",
+		time.Now().Format("2006-01-02 15:04:05"),
+		tokenResp.ExpiresIn,
+		expiresAt.Format("2006-01-02 15:04:05"))
 	return nil
 }
 
@@ -215,6 +222,11 @@ func (s *DeliveryVipService) renewToken() error {
 func (s *DeliveryVipService) getAccessToken() string {
 	s.tokenMutex.RLock()
 	defer s.tokenMutex.RUnlock()
+
+	if s.accessToken == "" {
+		log.Printf("[DeliveryVip] [%s] AVISO: Token de acesso está vazio!", time.Now().Format("2006-01-02 15:04:05"))
+	}
+
 	return s.accessToken
 }
 
@@ -222,6 +234,7 @@ func (s *DeliveryVipService) getAccessToken() string {
 func (s *DeliveryVipService) ActivateStore(merchantID string) error {
 	token := s.getAccessToken()
 	if token == "" {
+		log.Printf("[DeliveryVip] [%s] ERRO: Tentativa de desbloquear loja %s sem token válido", time.Now().Format("2006-01-02 15:04:05"), merchantID)
 		return fmt.Errorf("token de acesso não disponível")
 	}
 
@@ -256,6 +269,7 @@ func (s *DeliveryVipService) ActivateStore(merchantID string) error {
 func (s *DeliveryVipService) DeactivateStore(merchantID string) error {
 	token := s.getAccessToken()
 	if token == "" {
+		log.Printf("[DeliveryVip] [%s] ERRO: Tentativa de bloquear loja %s sem token válido", time.Now().Format("2006-01-02 15:04:05"), merchantID)
 		return fmt.Errorf("token de acesso não disponível")
 	}
 
@@ -298,6 +312,7 @@ type StoreStatusResult struct {
 func (s *DeliveryVipService) GetMultipleStoreStatus(merchantIDs []string) (map[string]models.StoreInfo, error) {
 	token := s.getAccessToken()
 	if token == "" {
+		log.Printf("[DeliveryVip] [%s] ERRO: Tentativa de consultar status das lojas sem token válido", time.Now().Format("2006-01-02 15:04:05"))
 		return nil, fmt.Errorf("token de acesso não disponível")
 	}
 
